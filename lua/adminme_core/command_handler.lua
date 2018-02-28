@@ -26,20 +26,22 @@ function cmd_mt:ctor(aliases, helptext, category, callback)
 	return self
 end
 
-function cmd_mt:addParam(name, type)
+function cmd_mt:addParam(name, type, default, arg_list)
 	if not am.argTypes[type] then
 		error("invalid argument type " .. tostring(type))
 	end
 
 	table.insert(self.params, {
 		name = name,
-		type = type
+		type = type,
+		default = default,
+		arg_list = arg_list,
 	})
 
 	self.pCount = self.pCount + 1
 
 	for k,v in pairs(self.aliases) do
-		ndoc.table.am.commands[ v ].params[ self.pCount ] = {name, type}
+		ndoc.table.am.commands[ v ].params[ self.pCount ] = {name, type, default, arg_list}
 	end
 
 	return self
@@ -186,13 +188,33 @@ function am.runCommand(pl, command, arguments)
 		am.notify(pl, "Sorry! You don't have permission to run this command.")
 		return
 	end
+	
+	if (#arguments < #command.params) then
+		local toInsert = 0
+		for k,v in pairs(command.params) do
+			if (v.default) then
+				toInsert = toInsert + 1
+			end
+		end
 
-	-- make the last argument into one argument
+		local difference = math.abs(#command.params - #arguments)
+
+		if (difference == toInsert) then
+			for i = 1, toInsert do
+				table.insert(arguments, " ")
+			end
+		end
+
+		print(difference, toInsert)
+	end
+
 	if #arguments < #command.params then
+
 		am.notify(pl, "Sorry! This command takes " .. (#command.params) .. " arguments!")
 		return
 	end
 
+	-- make the last argument into one argument
 	if #arguments > #command.params then
 		local extra = {}
 		for i = #command.params, #arguments do
@@ -208,7 +230,23 @@ function am.runCommand(pl, command, arguments)
 		if not a then return end
 
 		local param = command.params[index]
+
+		if (a == " " or a == nil) then
+			a = param.default
+		end
+
+		print(a)
+
 		local value, message = am.argTypes[param.type](a, pl)
+
+		if (param.arg_list) then
+			if (!table.HasValue(param.arg_list, value)) then
+				allGood = false
+				am.notify(pl, "Error: This parameter is not in the allowed values!")
+				return
+			end
+		end
+
 		if value == nil and message ~= nil then
 			allGood = false
 			am.notify(pl, "Error: " .. tostring(message))
@@ -239,5 +277,6 @@ function am.runCommand(pl, command, arguments)
 			return
 		end
 	end
+
 	callIt(processArguments(1, unpack(arguments)))
 end

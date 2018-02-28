@@ -65,8 +65,12 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		layout:SetSpaceY(100)
 		layout:SetSpaceX(0)
 
-		local pCount = table.Count(info.params) + 1
-		local itemWidth = layout:GetWide() / pCount
+		local pCount = 1
+		for k,v in ndoc.pairs(info.params) do
+			pCount = pCount + 1
+		end
+
+		local itemWidth = (bgPnl:GetWide() - 30) / pCount
 
 		if (itemWidth > 150) then
 			itemWidth = 150
@@ -75,12 +79,67 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		for _,param_info in ndoc.pairs(info.params) do
 			param_ident = param_info[1]
 			type  = param_info[2]
+			local default = param_info[3]
+			local argList = param_info[4]
 			local curPos = pos
 
-			if (type == "string" or type == "number") then
+			local count = 0
+
+			if (argList) then
+				local entry = vgui.Create("DComboBox", layout)
+				entry:SetSize(itemWidth, layout:GetTall())
+				entry:SetFont("adminme_ctrl")
+				function entry:Paint(w, h)
+					draw.RoundedBox(4, 0, 0, w, h, cols.ctrl_entry_entry)
+					draw.RoundedBox(4, 1, 1, w - 2, h - 2, Color(255, 255, 255))
+				end
+				function entry:DoClick()
+					if (self:IsMenuOpen()) then
+				        return self:CloseMenu()
+				    end
+				    
+				    self:OpenMenu()
+
+				    local dmenu = self.Menu:GetCanvas():GetChildren()
+
+				    for i = 1, #dmenu do
+				        local dlabel = dmenu[i]
+
+				        dlabel:SetFont("adminme_ctrl")
+
+				        function dlabel:Paint(w, h)
+				            draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_entry_entry)
+							draw.RoundedBox(0, 1, 1, w - 2, h - 2, Color(255, 255, 255))
+				        end
+				    end
+				end
+
+				local i = 1
+				for k,v in ndoc.pairs(argList) do
+					entry:AddChoice(v)
+
+					if (default and v == default) then
+						entry:ChooseOptionID(i)
+					end
+
+					i = i + 1
+				end
+
+				function entry:OnSelect(ind, val)
+					paramStor[ curPos ] = val
+
+					PrintTable(paramStor)
+				end
+
+			elseif (type == "string" or type == "number") then
+				local txt = param_ident
+				if (default) then
+					txt = param_ident .. " (def: " .. default .. ")"
+				end
+
 				local entry = vgui.Create("am.DTextEntry", layout)
 				entry:SetSize(itemWidth, layout:GetTall())
-				entry:SetPlaceholder(param_ident)
+				entry:SetPlaceholder(txt)
 				entry:SetTheme("LIGHT")
 
 				function entry:OnTextChanged()
@@ -126,14 +185,27 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				end
 
 				if (type == "time_type") then
+					local i = 1
 					for k,v in pairs({"s", "min", "hr", "d", "m", "yr"}) do
 						entry:AddChoice(v)
+
+						if (default and v == default) then
+							entry:ChooseOptionID(i)
+						end
+
+						i = i + 1
 					end
 				end
 
 				if (type == "bool") then
 					entry:AddChoice("true")
 					entry:AddChoice("false")
+
+					if (default == "true") then
+						entry:ChooseOption(1)
+					elseif (default == "false") then
+						entry:ChooseOption(2)
+					end
 				end
 
 				function entry:OnSelect(ind, val)
@@ -145,7 +217,7 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 
 					PrintTable(paramStor)
 				end
-
+				
 			end
 
 			pos = pos + 1

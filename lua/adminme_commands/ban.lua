@@ -15,7 +15,7 @@ am.addCMD("ban", 'Bans a player', 'Administration', function(caller, target, pti
 
 	target:Kick("You have been banned! Time: "..ptime.." "..time_type.." Reason: "..reason);
 
-end):addParam('target', 'player'):addParam('time', 'number'):addParam('time_type', 'time_type'):addParam('reason', 'string'):setPerm("ban")
+end):addParam('target', 'player'):addParam('reason', 'string'):addParam('time', 'number', 1):addParam('time_type', 'time_type', "d"):setPerm("ban")
 
 am.addCMD("banid", 'Bans a player by steam id', 'Administration', function(caller, target, ptime, time_type, reason)
 	local time = am.modTime(time_type, ptime)

@@ -205,6 +205,8 @@ function am.pullGroupInfo()
 
 			am.print("Found user group: " .. rank)
 		end
+
+		hook.Call("am.RanksLoaded", GAMEMODE)
 	end):execute()
 end
 

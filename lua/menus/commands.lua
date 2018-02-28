@@ -28,7 +28,13 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 
 		local pStr = ""
 		for k,v in ndoc.pairs(info.params) do
-			pStr = pStr .. " <" .. v[1] .. ">"
+			pStr = pStr .. " <" .. v[1]
+
+			if (v.default) then
+				pStr = pStr .. ":default = " .. v.default
+			end
+
+			pStr = pStr .. ">"
 		end
 
 		local example = vgui.Create("am.DTextEntry", headerPanel)

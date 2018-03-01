@@ -282,6 +282,7 @@ local function createMenu()
 		function sectionBtn:DoClick()
 			itemList:Clear()
 
+			mainSection:Clear()
 			if (frame.extras and #frame.extras > 0) then
 				for k,v in pairs(frame.extras) do
 					v:Remove()

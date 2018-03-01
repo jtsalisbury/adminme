@@ -55,9 +55,8 @@ hook.Add("AddAdditionalMenuSections", "am.addPlayerEventsSection", function(stor
 			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
 		end
 
+		txt = string.lower(txt)
 		for k,v in pairs(player.GetAll()) do
-			txt = string.lower(txt)
-
 			if (!string.find(string.lower(v:Nick()), txt) and !string.find(string.lower(v:SteamID()), txt)) then
 				return
 			end

@@ -70,11 +70,52 @@ local function showWarnings(sid, data, sc)
 end
 
 hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
-	local function populateList(scroller, main)
+	local function repopulateList(scroller, main, txt, liLay)
+		scroller:Clear()
+
+		local spacer = vgui.Create("DPanel", scroller)
+		spacer:SetSize(scroller:GetWide(), 60)
+		function spacer:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
+		end
+
+		txt = string.lower(txt)
+		for k,v in ndoc.pairs(ndoc.table.am.warnings) do
+			if (!string.find(string.lower(k), txt) and !string.find(string.lower(v.nick), txt)) then
+				return
+			end
+
+			local btn = scroller:Add("DButton")
+			btn:SetText("")
+			btn:SetSize(scroller:GetWide() - 40, 50)
+			function btn:DoClick()
+				showWarnings(k, v, liLay)
+			end
+			function btn:Paint(w, h)
+				local col = cols.item_btn_bg
+				local textCol = Color(0, 0, 0)
+
+				if (self:IsHovered()) then
+					col = cols.item_btn_bg_hover
+				end
+
+				if (activePlayer == k) then
+					col = cols.item_btn_bg_active
+					textCol = cols.item_btn_text_active
+				end
+
+				draw.RoundedBox(8, 0, 0, w, h, col)
+				draw.SimpleText(v.nick .. " - " .. v.warningCount, "adminme_btn_small", 15, h / 2, textCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+			end
+		end
+	end
+
+	local function populateList(scroller, main, frame)
 		main:Clear()
+		activePlayer = nil
 
 		local warnScroll = vgui.Create("DScrollPanel", main)
-		warnScroll:SetSize(main:GetWide() - 10, main:GetTall() - 10)
+		warnScroll:SetSize(main:GetWide(), main:GetTall() - 10)
 		warnScroll:SetPos(5, 5)
 
 		local liLay = vgui.Create("DIconLayout", warnScroll)
@@ -85,36 +126,44 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 		local sbar = warnScroll:GetVBar()
 
 		function sbar:Paint( w, h )
-			draw.RoundedBox( 0, 0, 0, w, h, cols.main_btn)
+			draw.RoundedBox( 0, 0, 0, w, h, Color(0, 0, 0, 0))
 		end
 		function sbar.btnUp:Paint( w, h )
-			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 100 ) )
+			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 0 ) )
 		end
 		function sbar.btnDown:Paint( w, h )
-			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 100 ) )
+			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 0 ) )
 		end
 		function sbar.btnGrip:Paint( w, h )
-			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 100 ) )
+			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 0 ) )
 		end
 
-		for k,v in ndoc.pairs(ndoc.table.am.warnings) do
-			local btn = scroller:Add("DButton")
-			btn:SetText("")
-			btn:SetSize(scroller:GetWide(), 20)
-			function btn:DoClick()
-				showWarnings(k, v, liLay)
-			end
-			function btn:Paint(w, h)
-				local col = cols.main_btn
-
-				if (self:IsHovered() or activePlayer == k) then
-					col = cols.main_btn_hover
-				end
-
-				draw.RoundedBox(0, 0, 0, w, h, col)
-				draw.SimpleText(v.nick .. " - " .. v.warningCount, "adminme_btn_small", w / 2, h / 2, cols.main_btn_text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			end
+		local search_bg = vgui.Create("DPanel", frame)
+		search_bg:SetSize(scroller:GetWide(), 60)
+		search_bg:SetPos(0, 60)
+		function search_bg:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
 		end
+
+		local search = vgui.Create("am.DTextEntry", search_bg)
+		search:SetSize(scroller:GetWide() - 40, 40)
+		search:SetPos(10, 10)
+		search:SetFont("adminme_ctrl")
+		search:SetPlaceholder("Search...")
+
+		frame.extras = {search_bg, search}
+
+		function search:OnChange()
+			repopulateList(scroller, main, self:GetText(), liLay)
+		end
+
+		local search_bg = vgui.Create("DPanel", scroller)
+		search_bg:SetSize(scroller:GetWide(), 35)
+		function search_bg:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
+		end
+
+		repopulateList(scroller, main, "", liLay)
 	end
 	if (LocalPlayer():hasPerm("warning")) then
 		stor["Warnings"] = populateList

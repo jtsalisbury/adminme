@@ -30,8 +30,8 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		for k,v in ndoc.pairs(info.params) do
 			pStr = pStr .. " <" .. v[1]
 
-			if (v.default) then
-				pStr = pStr .. ":default = " .. v.default
+			if (v[3]) then
+				pStr = pStr .. " = " .. v[3]
 			end
 
 			pStr = pStr .. ">"

@@ -56,7 +56,7 @@ am.addCMD("addmusic", 'Adds a YouTube URL to the music playlist. Do not add anyt
 		am.notify(caller, am.green, name, am.def, " successfully added!")
 	end)
 
-end):addParam('video id', 'string'):addParam('start minute', 'number'):addParam('start second', 'number'):setPerm("music")
+end):addParam('video id', 'string'):addParam('start minute', 'number', 0):addParam('start second', 'number', 0):setPerm("music")
 
 am.addCMD("removesong", "Removes a song based on the ID found in the Music Menu", "Music", function(caller, id)
 	table.remove(am.music, id)

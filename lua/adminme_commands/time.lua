@@ -11,4 +11,4 @@ am.addCMD("mytime", "Retrieves and shows your play time", "General", function(pl
 			am.notify(ply, "You have played ", am.green, timePretty["h"], am.def, " hours, ", am.green, timePretty["m"], am.def, " minutes, and ", am.green, timePretty["s"], am.def, " seconds!")
 		end)
 	:execute()
-end)
+end):setPerm("time")

@@ -135,6 +135,8 @@ local function initDB()
 
 	function am.db:onConnectionFailed(error)
 		print(error)
+
+		am.db:connect()
 	end
 
 	function am.db:onError(query)

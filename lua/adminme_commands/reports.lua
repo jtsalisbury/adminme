@@ -1,3 +1,6 @@
+util.AddNetworkString("am.syncReportList")
+util.AddNetworkString("am.requestReportList")
+
 am.addCMD("report", 'Report a player', 'Administration', function(caller, target, reason)
 	
 	if (caller.reports and caller.reports[ target ]) then
@@ -24,6 +27,30 @@ am.addCMD("report", 'Report a player', 'Administration', function(caller, target
 	:execute()
 
 end):addParam("target", "player"):addParam("reason", "string"):setPerm("report")
+
+am.addCMD("creport", "Closes a report. This shouldn't be called outside of the menu!", "Administration", function(caller, id)
+
+	local q = am.db:update("reports"):update("state", 1):where("id", id)
+		:callback(function(res)
+			am.notify(am.getAdmins(), "The report with id #" .. id .. " has been closed by " .. caller:Nick())
+		end)
+	:execute()
+
+end):addParam("id", "number"):setPerm("creport")
+
+net.Receive("am.requestReportList", function(l, ply)
+	if (!ply:hasPerm("creport")) then return end
+	
+	local q = am.db:select("reports"):where("state", 0)
+		:callback(function(res)
+
+			net.Start("am.syncReportList")
+				net.WriteTable(res)
+			net.Send(ply)
+			
+		end)
+	:execute()
+end)
 
 hook.Add("PlayerInitialSpawn", "am.activeReports", function(ply)
 	timer.Simple(30, function() 

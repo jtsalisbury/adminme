@@ -5,7 +5,6 @@ local function showBanInfo(k, v)
 	mainSection:Clear()
 	activeBan = v["banned_name"]
 
-	local offset_y = 5
 
 	local banPnl = vgui.Create("am.HeaderPanel", mainSection)
 	banPnl:SetSize(mainSection:GetWide() - 50, mainSection:GetTall() - 50)
@@ -43,7 +42,6 @@ local function showBanInfo(k, v)
 	reason:SetFont("adminme_header")
 	reason:SetSize(bs_w, 30)
 	reason:SetTextColor(cols.main_btn_text)
-	reason:SetPos(0, offset_y)
 
 	local bgPnl = vgui.Create("DPanel", liLay)
 	bgPnl:SetSize(liLay:GetWide(), 100)

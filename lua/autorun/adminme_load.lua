@@ -5,8 +5,10 @@ am.red   = Color(255, 25, 25)
 am.def   = Color(255, 255, 255)
 
 am.config = am.config or {}
-
+print('test')
 if (SERVER) then
+	resource.AddFile("resource/fonts/Roboto-Regular.ttf")
+
 	util.AddNetworkString("am.hud_log")
 	util.AddNetworkString("am.notify")
 
@@ -21,7 +23,6 @@ if (SERVER) then
 	AddCSLuaFile("vgui/dscrollpanel2.lua")
 	AddCSLuaFile("vgui/am_textentry.lua")
 	AddCSLuaFile("vgui/am_headerpanel.lua")
-
 
 	hook.Add("ndocLoaded", "waitForNdoc", function() 
 		print("Netdoc loaded!")

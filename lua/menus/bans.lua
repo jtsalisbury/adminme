@@ -5,7 +5,6 @@ local function showBanInfo(k, v)
 	mainSection:Clear()
 	activeBan = v["banned_name"]
 
-
 	local banPnl = vgui.Create("am.HeaderPanel", mainSection)
 	banPnl:SetSize(mainSection:GetWide() - 50, mainSection:GetTall() - 50)
 	banPnl:SetHHeight(80)
@@ -85,6 +84,53 @@ local function showBanInfo(k, v)
 	end
 end
 
+local banList = nil;
+local function repopulateList(scroller, main, search_text) 
+	scroller:Clear()
+	if (!banList) then
+		return
+	end
+
+	local spacer = vgui.Create("DPanel", scroller)
+	spacer:SetSize(scroller:GetWide(), 50)
+	function spacer:Paint(w, h)
+		draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255, 0))
+	end
+
+	local tW, tH = surface.GetTextSize("X")
+	for k, v in pairs(banList) do
+		if (!string.find(v["banned_name"], search_text) && !string.find(v["banned_steamid"], search_text) && !string.find(v["banner_steamid"], search_text) && !string.find(v["banner_name"], search_text) && search_text != "") then
+			continue
+		end
+
+		local btn = scroller:Add("DButton")
+		btn:SetText("")
+		btn:SetSize(scroller:GetWide(), tH + 10)
+		function btn:DoClick()
+			showBanInfo(k, v)
+		end
+		function btn:Paint(w, h)
+			local col = cols.item_btn_bg
+			local textCol = cols.item_btn_text
+
+			if (self:IsHovered()) then
+				col = cols.item_btn_bg_hover
+				textCol = cols.item_btn_text_hover
+			end
+
+			local adjustedWidth = w - 20
+			if (activeBan == v["banned_name"]) then
+				col = cols.item_btn_bg_active
+				textCol = cols.item_btn_text_active
+				adjustedWidth = w - 10
+			end
+
+			draw.RoundedBox(0, 10, 0, adjustedWidth, h, col)
+			draw.SimpleText(v["banned_name"], "adminme_btn_small", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		end
+	end
+end
+
 net.Receive("am.syncBanList", function()
 	local res = net.ReadTable()
 
@@ -95,51 +141,42 @@ net.Receive("am.syncBanList", function()
 
 	if (#res == 0) then return end
 
-	local spacer = vgui.Create("DPanel", banListScroll)
-	spacer:SetSize(banListScroll:GetWide(), 5)
-	function spacer:Paint(w, h)
-		draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
-	end
-
-	for k, v in pairs(res) do
-		local btn = banListScroll:Add("DButton")
-		btn:SetText("")
-		btn:SetSize(banListScroll:GetWide() - 40, 50)
-		function btn:DoClick()
-			showBanInfo(k, v)
-		end
-		function btn:Paint(w, h)
-			local col = cols.item_btn_bg
-			local textCol = Color(0, 0, 0)
-
-			if (self:IsHovered()) then
-				col = cols.item_btn_bg_hover
-			end
-
-			if (activeBan == v["banned_name"]) then
-				col = cols.item_btn_bg_active
-				textCol = cols.item_btn_text_active
-			end
-
-			draw.RoundedBox(8, 0, 0, w, h, col)
-			draw.SimpleText(v["banned_name"], "adminme_btn_small", 15, h / 2, textCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		end
-	end
+	banList = res
+	repopulateList(banListScroll, mainSection, "")
 end)
 
 hook.Add("AddAdditionalMenuSections", "am.addBanMenu", function(stor)
-	local function populateList(scroller, main)
+	local function populateList(scroller, main, frame)
 		main:Clear()
 		activeBan = nil
 
 		mainSection = main
+		banListScroll = scroller
+
+		local posX = frame:GetWide() - main:GetWide() - scroller:GetWide()
+		local search_bg = vgui.Create("DPanel", frame)
+		search_bg:SetSize(scroller:GetWide(), 50)
+		search_bg:SetPos(posX, 0)
+		function search_bg:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, cols.item_scroll_bg)
+		end
+
+		local search = vgui.Create("am.DTextEntry", search_bg)
+		search:SetSize(search_bg:GetWide() - 20, search_bg:GetTall() - 20)
+		search:SetPos(10, 10)
+		search:SetFont("adminme_ctrl")
+		search:SetPlaceholder("Search for ban...")
+
+		frame.extras = {search_bg, search}
+
+		function search:OnChange()
+			repopulateList(scroller, main, self:GetText())
+		end
 
 		net.Start("am.requestBanList")
 		net.SendToServer()
-
-		banListScroll = scroller
 	end
 	if (LocalPlayer():hasPerm("banmgmt")) then
-		stor["Bans"] = populateList
+		stor["Bans"] = {cback = populateList, useItemList = true}
 	end
 end)

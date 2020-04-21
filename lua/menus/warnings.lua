@@ -40,7 +40,7 @@ local function showWarnings(sid, data, sc)
 
 		local admin = vgui.Create("DLabel", panel)
 		admin:SetPos(10, 10 + height)
-		admin:SetText("Admin: " .. v.admin)
+		admin:SetText("Warned by: " .. v.admin)
 		admin:SetFont("adminme_btn_small")
 		admin:SizeToContents()
 		admin:SetTextColor(cols.main_btn_text)
@@ -74,9 +74,9 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 		scroller:Clear()
 
 		local spacer = vgui.Create("DPanel", scroller)
-		spacer:SetSize(scroller:GetWide(), 60)
+		spacer:SetSize(scroller:GetWide(), 50)
 		function spacer:Paint(w, h)
-			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
+			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255, 0))
 		end
 
 		txt = string.lower(txt)
@@ -85,27 +85,31 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 				return
 			end
 
+			local tW, tH = surface.GetTextSize("X")
 			local btn = scroller:Add("DButton")
 			btn:SetText("")
-			btn:SetSize(scroller:GetWide() - 40, 50)
+			btn:SetSize(scroller:GetWide(), tH + 10)
 			function btn:DoClick()
 				showWarnings(k, v, liLay)
 			end
 			function btn:Paint(w, h)
 				local col = cols.item_btn_bg
-				local textCol = Color(0, 0, 0)
+				local textCol = cols.item_btn_text
 
 				if (self:IsHovered()) then
 					col = cols.item_btn_bg_hover
+					textCol = cols.item_btn_text_hover
 				end
 
+				local adjustedWidth = w - 20
 				if (activePlayer == k) then
 					col = cols.item_btn_bg_active
 					textCol = cols.item_btn_text_active
+					adjustedWidth = w - 10
 				end
 
-				draw.RoundedBox(8, 0, 0, w, h, col)
-				draw.SimpleText(v.nick .. " - " .. v.warningCount, "adminme_btn_small", 15, h / 2, textCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+				draw.RoundedBox(0, 10, 0, adjustedWidth, h, col)
+				draw.SimpleText(v.nick .. " (" .. v.warningCount .. ")", "adminme_btn_small", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 		end
 	end
@@ -124,7 +128,7 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 		liLay:SetSpaceY(5)
 
 		local sbar = warnScroll:GetVBar()
-
+		sbar:SetSize(0, 0)
 		function sbar:Paint( w, h )
 			draw.RoundedBox( 0, 0, 0, w, h, Color(0, 0, 0, 0))
 		end
@@ -138,18 +142,19 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 			draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 0 ) )
 		end
 
+		local posX = frame:GetWide() - main:GetWide() - scroller:GetWide()
 		local search_bg = vgui.Create("DPanel", frame)
-		search_bg:SetSize(scroller:GetWide(), 60)
-		search_bg:SetPos(0, 60)
+		search_bg:SetSize(scroller:GetWide(), 50)
+		search_bg:SetPos(posX, 0)
 		function search_bg:Paint(w, h)
-			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
+			draw.RoundedBox(0, 0, 0, w, h, cols.item_scroll_bg)
 		end
 
 		local search = vgui.Create("am.DTextEntry", search_bg)
-		search:SetSize(scroller:GetWide() - 40, 40)
+		search:SetSize(search_bg:GetWide() - 20, search_bg:GetTall() - 20)
 		search:SetPos(10, 10)
 		search:SetFont("adminme_ctrl")
-		search:SetPlaceholder("Search...")
+		search:SetPlaceholder("Search for player...")
 
 		frame.extras = {search_bg, search}
 
@@ -157,15 +162,9 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 			repopulateList(scroller, main, self:GetText(), liLay)
 		end
 
-		local search_bg = vgui.Create("DPanel", scroller)
-		search_bg:SetSize(scroller:GetWide(), 35)
-		function search_bg:Paint(w, h)
-			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
-		end
-
 		repopulateList(scroller, main, "", liLay)
 	end
 	if (LocalPlayer():hasPerm("warning")) then
-		stor["Warnings"] = populateList
+		stor["Warnings"] = {cback = populateList, useItemList = true}
 	end
 end)

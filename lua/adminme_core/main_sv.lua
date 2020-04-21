@@ -170,7 +170,7 @@ hook.Add("PlayerAuthed", "am.CheckBans", function(ply)
 
 	am.checkBan(steamid, ip, ply)
 
-	http.Fetch(
+	/*http.Fetch(
 		string.format("http://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v0001/?key=%s&format=json&steamid=%s&appid_playing=4000",
 			am.config.api_key,
 			util.SteamIDTo64(steamid)),
@@ -188,7 +188,7 @@ hook.Add("PlayerAuthed", "am.CheckBans", function(ply)
 
 		function(code)
 			error(string.format("FamilySharing: Failed API call for %s | %s (Error: %s)\n", ply:Nick(), ply:SteamID(), code))
-		end)
+		end)*/
 
 end)
 

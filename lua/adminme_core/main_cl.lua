@@ -47,7 +47,7 @@ end)
 
 --CapsAdmin
 function Wrap( string, width )
-	 local tbl = string.Explode( " ", string )
+	local tbl = string.Explode( " ", string )
 	local str = { "" }
 	local pos = 1
 
@@ -92,28 +92,28 @@ function doDisabled(panel, w, h)
 end
 
 surface.CreateFont("adminme_head", {
-		font = "Open Sans",
+		font = "Roboto",
 		size = 36,
 	})
 
 surface.CreateFont("adminme_btn", {
-		font = "Open Sans",
+		font = "Roboto",
 		size = 30,
 	})
 
-surface.CreateFont("adminme_header", {
-			font = "Open Sans",
-			size = 25,
+surface.CreateFont("adminme_section_btn", {
+			font = "Roboto",
+			size = 20,
 		})
 
 surface.CreateFont("adminme_ctrl", {
-			font = "Open Sans",
+			font = "Roboto",
 			size = 20,
 		})
 
 
 surface.CreateFont("adminme_btn_small", {
-		font = "Open Sans",
+		font = "Roboto",
 		size = 20,
 	})
 
@@ -128,17 +128,21 @@ function clientNotify(...)
 end
 
 cols = {
-	header = Color(240, 240, 240),
-	header_text = Color(60, 60, 60),
+	header = Color(255, 255, 255),
+	header_text = Color(107, 110, 116),
+	header_text_active = Color(255, 255, 255),
 	header_underline = Color(200, 200, 200),
-	header_btn_hover = Color(230, 230, 230),
-	header_btn_active = Color(220, 220, 220),
+	header_btn_hover = Color(200, 200, 200, 51),
+	header_btn_active = Color(107, 110, 116),
+
+	item_scroll_bg = Color(107, 110, 116),
 
 	item_btn_text = Color(255, 255, 255),
-	item_btn_bg = Color(255, 255, 255),
-	item_btn_bg_hover = Color(245, 245, 245),
-	item_btn_bg_active = Color(52, 152, 219),
-	item_btn_text_active = Color(255, 255, 255),
+	item_btn_text_hover = Color(0, 0, 0),
+	item_btn_bg = Color(107, 110, 116),
+	item_btn_bg_hover = Color(240, 240, 240, 255),
+	item_btn_bg_active = Color(210, 220, 222),
+	item_btn_text_active = Color(0, 0, 0),
 
 	ctrl_text = Color(0, 0, 0),
 	ctrl_text_entry = Color(240, 240, 240),
@@ -163,7 +167,7 @@ cols = {
 
 	close_btn = Color(40, 39, 41),
 	close_btn_hover = Color(30, 29, 31),
-	main_bg = Color(255, 255, 255),
+	main_bg = Color(210, 220, 222),
 	main_btn = Color(240, 240, 240),
 	main_btn_hover = Color(220, 220, 220),
 	main_btn_text = Color(0, 0, 0),
@@ -176,6 +180,9 @@ cols = {
 local frame
 local function createMenu()
 	if (IsValid(frame)) then return end
+	
+	surface.SetFont('adminme_head')
+	local amW, amH = surface.GetTextSize("AdminMe") 
 
 	frame = vgui.Create("DFrame")
 	frame:SetSize(ScrW() * 5/6 , ScrH() * 5/6)
@@ -189,31 +196,37 @@ local function createMenu()
 		draw.RoundedBox(0, 0, 0, w, h, cols.main_bg)
 	end
 
-	local header = vgui.Create("DPanel", frame)
-	header:SetSize(frame:GetWide(), 60)
-	function header:Paint(w, h)
+	local sidebar = vgui.Create("DPanel", frame)
+	sidebar:SetSize(200, frame:GetTall())
+	function sidebar:Paint(w, h)
 		draw.RoundedBox(0, 0, 0, w, h, cols.header)
-		draw.RoundedBox(0, 0, h - 1, w, 1, cols.header_underline)
+		draw.RoundedBox(0, w - 1, 0, 1, h, cols.header_underline)
 
-		draw.SimpleText("AdminMe", "adminme_head", 15, h / 2, cols.header_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText("AdminMe", "adminme_head", w / 2, 30, cols.header_text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.RoundedBox(0, w / 2 - amW / 2 - 5, amH + 30, amW + 10, 1, cols.header_underline)
 	end
+
+	// Total height + underline
+	local headerHeight = amH + 60
+
+	surface.SetFont('adminme_section_btn')
+	local sectionTextW, sectionTextH = surface.GetTextSize("Close") 
 
 	local fW, fH = frame:GetWide(), frame:GetTall()
 
-	local hOffset = header:GetTall() / 2 - 15
-	local close = vgui.Create("DButton", header)
-	close:SetPos(fW - 30 - hOffset, hOffset)
-	close:SetSize(30, 30)
+	local close = vgui.Create("DButton", sidebar)
+	close:SetSize(sidebar:GetWide() - 20, sectionTextH + 20)
+	close:SetPos(10, fH - close:GetTall() - 10)
 	close:SetText("")
 	function close:Paint(w, h)
 		local col = cols.header
 
 		if (self:IsHovered()) then
-			col = cols.main_btn_hover
+			col = cols.header_btn_hover
 		end
 
-		draw.RoundedBox(4, 0, 0, 30, 30, col)
-		draw.SimpleText("x", "adminme_head", w / 2, h / 2 - 2, cols.header_text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.RoundedBox(0, 0, 0, w, h, col)
+		draw.SimpleText("Close", "adminme_section_btn", w / 2, h / 2, cols.header_text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
 	function close:DoClick()
 		frame:Close()
@@ -222,51 +235,52 @@ local function createMenu()
 	local listOfSections = {}
 	hook.Call("AddAdditionalMenuSections", GAMEMODE, listOfSections)
 
-	local offset_x = 150
+	local offset_y = 150
 	local activeSection = nil
 
 	local itemScroller = vgui.Create("DScrollPanel", frame)
-	itemScroller:SetSize(180, fH - header:GetTall())
-	itemScroller:SetPos(0, header:GetTall())
+	itemScroller:SetSize(sidebar:GetWide(), fH)
+	itemScroller:SetPos(sidebar:GetWide(), 0)
+	itemScroller:SetVisible(false)
+	function itemScroller:Paint(w, h) 
+		draw.RoundedBox( 0, 0, 0, w, h, cols.item_scroll_bg)
+	end
 
 	local scB = itemScroller:GetVBar()
+	scB:SetSize(0, 0)
 	function scB:Paint( w, h )
-		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255))
+		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255, 0))
 	end
 	function scB.btnUp:Paint( w, h )
-		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255))
+		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255, 0))
 	end
 	function scB.btnDown:Paint( w, h )
-		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255))
+		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255, 0))
 	end
 	function scB.btnGrip:Paint( w, h )
-		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255))
+		draw.RoundedBox( 0, 0, 0, w, h, Color( 255, 255, 255, 0))
 	end
 
 	local itemList = vgui.Create("DIconLayout", itemScroller)
-	itemList:SetPos(10, 0)
-	itemList:SetSize(itemScroller:GetWide() - 10, itemScroller:GetTall())
+	itemList:SetPos(0, 0)
+	itemList:SetSize(itemScroller:GetWide(), itemScroller:GetTall())
 	itemList:SetSpaceY(10)
 	itemList:SetSpaceX(0)
 
-
 	local mainSection = vgui.Create("DPanel", frame)
-	mainSection:SetSize(fW - itemList:GetWide(), fH - header:GetTall())
-	mainSection:SetPos(itemList:GetWide(), header:GetTall())
+	mainSection:SetSize(0, 0)
 	function mainSection:Paint(w, h)
-		draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
+		draw.RoundedBox(0, 0, 0, w, h, cols.main_bg)
 	end
 
 	for k,v in pairs(listOfSections) do
-		surface.SetFont("adminme_btn")
-		local w, h = surface.GetTextSize(k)
-
-		local sectionBtn = vgui.Create("DButton", header)
-		sectionBtn:SetSize(w + 20, header:GetTall() - 1)
-		sectionBtn:SetPos(offset_x, 0)
+		local sectionBtn = vgui.Create("DButton", sidebar)
+		sectionBtn:SetSize(sidebar:GetWide(), sectionTextH + 20)
+		sectionBtn:SetPos(sidebar:GetWide() / 2 - sectionBtn:GetWide() / 2, offset_y)
 		sectionBtn:SetText("")
 		function sectionBtn:Paint(w, h)
 			local col = cols.header
+			local textCol = cols.header_text
 
 			if (self:IsHovered()) then
 				col = cols.header_btn_hover
@@ -274,10 +288,15 @@ local function createMenu()
 
 			if (activeSection == k) then
 				col = cols.header_btn_active
+				textCol = cols.header_text_active
 			end
 
-			draw.RoundedBox(0, 0, 0, w, h, col)
-			draw.SimpleText(k, "adminme_header", w / 2, h / 2, cols.header_text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			local additionalWidth = 0
+			if (v.useItemList) then
+				additionalWidth = activeSection == k and 10 or 0
+			end
+			draw.RoundedBox(0, 10, 0, w - 20 + additionalWidth, h, col)
+			draw.SimpleText(k, "adminme_section_btn", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 		function sectionBtn:DoClick()
 			itemList:Clear()
@@ -288,13 +307,27 @@ local function createMenu()
 					v:Remove()
 				end
 			end
+
+			local adjustedMainWidth = fW - itemScroller:GetWide() - sidebar:GetWide()
+			local adjustedMainOffset = sidebar:GetWide() + itemScroller:GetWide()
 			
-			v(itemList, mainSection, frame)
+			if (!v.useItemList) then
+				itemScroller:SetVisible(false)
+				adjustedMainWidth = fW - sidebar:GetWide()
+				adjustedMainOffset = sidebar:GetWide()
+			else
+				itemScroller:SetVisible(true)
+			end
+
+			mainSection:SetSize(adjustedMainWidth, fH)
+			mainSection:SetPos(adjustedMainOffset, 0)
+
+			v.cback(itemList, mainSection, frame)
 
 			activeSection = k
 		end
 
-		offset_x = offset_x + sectionBtn:GetWide()
+		offset_y = offset_y + sectionBtn:GetTall() + 10
 	end
 end
 concommand.Add("menu", createMenu)

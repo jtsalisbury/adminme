@@ -274,8 +274,8 @@ function PANEL:Paint( w, h )
 		col = cols.ctrl_text_disabled
 	end
 
-	draw.RoundedBox(self.theme == "LIGHT" and 4 or 8, 0, 0, w, h, cols.ctrl_text_entry)
-	draw.RoundedBox(self.theme == "LIGHT" and 4 or 8, 1, 1, w - 2, h - 2, col)
+	draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_text_entry)
+	draw.RoundedBox(0, 1, 1, w - 2, h - 2, col)
 
 	if (self:GetText() == "") then
 		draw.SimpleText(self.pHolderTxt or "", "adminme_ctrl", 5, h / 2, cols.ctrl_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)

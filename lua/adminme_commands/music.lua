@@ -37,6 +37,8 @@ am.addCMD("addmusic", 'Adds a YouTube URL to the music playlist. Do not add anyt
 	http.Fetch(apiURL, function(data)
 		data = util.JSONToTable(data)
 
+		PrintTable(data)
+
 		local name = data["items"][1]["snippet"]["localized"]["title"]
 		local length = data["items"][1]["contentDetails"]["duration"]
 

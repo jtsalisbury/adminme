@@ -79,6 +79,53 @@ local function showReportInfo(data)
 	end
 end
 
+local reportList = nil
+local function repopulateList(scroller, main, search_text) 
+	scroller:Clear()	
+	if (!reportList) then
+		return
+	end
+
+	local spacer = vgui.Create("DPanel", reportListScroll)
+	spacer:SetSize(reportListScroll:GetWide(), 50)
+	function spacer:Paint(w, h)
+		draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255, 0))
+	end
+
+	local tW, tH = surface.GetTextSize("X")
+	for k, v in pairs(reportList) do
+		if (!string.find(v["target_nick"], search_text) && !string.find(v["target_steamid"], search_text) && !string.find(v["creator_nick"], search_text) && !string.find(v["creator_steamid"], search_text) && search_text != "") then
+			continue
+		end
+
+		local btn = reportListScroll:Add("DButton")
+		btn:SetText("")
+		btn:SetSize(scroller:GetWide(), tH + 10)
+		function btn:DoClick()
+			showReportInfo(v)
+		end
+		function btn:Paint(w, h)
+			local col = cols.item_btn_bg
+			local textCol = cols.item_btn_text
+
+			if (self:IsHovered()) then
+				col = cols.item_btn_bg_hover
+				textCol = cols.item_btn_text_hover
+			end
+
+			local adjustedWidth = w - 20
+			if (activeReport == v["id"]) then
+				col = cols.item_btn_bg_active
+				textCol = cols.item_btn_text_active
+				adjustedWidth = w - 10
+			end
+
+			draw.RoundedBox(0, 10, 0, adjustedWidth, h, col)
+			draw.SimpleText(v["target_nick"], "adminme_btn_small", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		end
+	end
+end
+
 net.Receive("am.syncReportList", function()
 	local res = net.ReadTable()
 
@@ -89,51 +136,43 @@ net.Receive("am.syncReportList", function()
 
 	if (#res == 0) then return end
 
-	local spacer = vgui.Create("DPanel", reportListScroll)
-	spacer:SetSize(reportListScroll:GetWide(), 5)
-	function spacer:Paint(w, h)
-		draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
-	end
-
-	for k, v in pairs(res) do
-		local btn = reportListScroll:Add("DButton")
-		btn:SetText("")
-		btn:SetSize(reportListScroll:GetWide() - 40, 50)
-		function btn:DoClick()
-			showReportInfo(v)
-		end
-		function btn:Paint(w, h)
-			local col = cols.item_btn_bg
-			local textCol = Color(0, 0, 0)
-
-			if (self:IsHovered()) then
-				col = cols.item_btn_bg_hover
-			end
-
-			if (activeReport == v["id"]) then
-				col = cols.item_btn_bg_active
-				textCol = cols.item_btn_text_active
-			end
-
-			draw.RoundedBox(8, 0, 0, w, h, col)
-			draw.SimpleText(v["target_nick"], "adminme_btn_small", 15, h / 2, textCol, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		end
-	end
+	reportList = res
+	repopulateList(reportListScroll, mainSection, "")
 end)
 
 hook.Add("AddAdditionalMenuSections", "am.addReportMenu", function(stor)
-	local function populateList(scroller, main)
+	local function populateList(scroller, main, frame)
 		main:Clear()
 		activeReport = nil
 
 		mainSection = main
+		reportListScroll = scroller
+
+		local posX = frame:GetWide() - main:GetWide() - scroller:GetWide()
+		local search_bg = vgui.Create("DPanel", frame)
+		search_bg:SetSize(scroller:GetWide(), 50)
+		search_bg:SetPos(posX, 0)
+		function search_bg:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, cols.item_scroll_bg)
+		end
+
+		local search = vgui.Create("am.DTextEntry", search_bg)
+		search:SetSize(search_bg:GetWide() - 20, search_bg:GetTall() - 20)
+		search:SetPos(10, 10)
+		search:SetFont("adminme_ctrl")
+		search:SetPlaceholder("Search for report...")
+
+		frame.extras = {search_bg, search}
+
+		function search:OnChange()
+			repopulateList(scroller, main, self:GetText())
+		end
 
 		net.Start("am.requestReportList")
 		net.SendToServer()
 
-		reportListScroll = scroller
 	end
 	if (LocalPlayer():hasPerm("creport")) then
-		stor["Reports"] = populateList
+		stor["Reports"] = {cback = populateList, useItemList = true}
 	end
 end)

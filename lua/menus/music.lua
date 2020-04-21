@@ -75,8 +75,8 @@ hook.Add("AddAdditionalMenuSections", "am.addMusicMenu", function(stor)
 	local function populateList(scroller, main, frame)
 		main:Clear()
 
-		local liLay = vgui.Create("DListView", frame)
-		liLay:SetSize(frame:GetWide() - 30, main:GetTall() - 30)
+		local liLay = vgui.Create("DListView", main)
+		liLay:SetSize(main:GetWide() - 30, main:GetTall() - 30)
 		liLay:SetPos(15, 75)
 		liLay:SetMultiSelect(false)
 		liLay:SetHeaderHeight(40)
@@ -125,7 +125,7 @@ hook.Add("AddAdditionalMenuSections", "am.addMusicMenu", function(stor)
 
 		//PAINTING OF HEADERS
 
-		local idLbl = vgui.Create("DLabel", frame)
+		local idLbl = vgui.Create("DLabel", main)
 		idLbl:SetSize(liLay:GetWide() / 3, 40)
 		idLbl:SetPos(15, 75)
 		idLbl:SetText("")
@@ -136,7 +136,7 @@ hook.Add("AddAdditionalMenuSections", "am.addMusicMenu", function(stor)
 			draw.SimpleText("ID", "adminme_header", w / 2, h / 2, cols.head_panel_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 
-		local nameLbl = vgui.Create("DLabel", frame)
+		local nameLbl = vgui.Create("DLabel", main)
 		nameLbl:SetSize(liLay:GetWide() / 3, 40)
 		nameLbl:SetPos(15 + idLbl:GetWide(), 75)
 		nameLbl:SetText("")
@@ -146,7 +146,7 @@ hook.Add("AddAdditionalMenuSections", "am.addMusicMenu", function(stor)
 			draw.SimpleText("Name", "adminme_header", w / 2, h / 2, cols.head_panel_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		end
 
-		local lenLbl = vgui.Create("DLabel", frame)
+		local lenLbl = vgui.Create("DLabel", main)
 		lenLbl:SetSize(liLay:GetWide() / 3, 40)
 		lenLbl:SetPos(15 + idLbl:GetWide() * 2, 75)
 		lenLbl:SetText("")
@@ -214,6 +214,6 @@ hook.Add("AddAdditionalMenuSections", "am.addMusicMenu", function(stor)
 		end
 	end
 	if (LocalPlayer():hasPerm("music")) then
-		stor["Music"] = populateList
+		stor["Music"] = {cback = populateList, useItemList = false}
 	end
 end)

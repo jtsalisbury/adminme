@@ -86,15 +86,15 @@ function PANEL:SetHText(text)
 end
 
 function PANEL:Paint(w, h)
-	draw.RoundedBox(8, 0, 0, w, h, cols.head_panel_outline)
-	draw.RoundedBox(8, 1, 1, w - 2, h - 2, cols.head_panel_bg)
+	draw.RoundedBox(0, 0, 0, w, h, cols.head_panel_outline)
+	draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.head_panel_bg)
 
 	self.HeaderHeight = self.HeaderHeight or 0
 
-	draw.RoundedBox(8, 0, 0, w, self.HeaderHeight, cols.head_panel_head_bg)
+	draw.RoundedBox(0, 0, 0, w, self.HeaderHeight, cols.head_panel_head_bg)
 	draw.RoundedBox(0, 1, self.HeaderHeight / 2, w - 2, self.HeaderHeight * 3 / 4, cols.head_panel_bg)
 
-	draw.SimpleText(self.HText, "adminme_header", 15, self.HeaderHeight * 1 / 4, cols.head_panel_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	draw.SimpleText(self.HText, "adminme_section_btn", 15, self.HeaderHeight * 1 / 4, cols.head_panel_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 end
 
 function PANEL:UpdateColours()

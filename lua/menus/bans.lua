@@ -6,10 +6,10 @@ local function showBanInfo(k, v)
 	activeBan = v["banned_name"]
 
 	local banPnl = vgui.Create("am.HeaderPanel", mainSection)
-	banPnl:SetSize(mainSection:GetWide() - 50, mainSection:GetTall() - 50)
+	banPnl:SetSize(mainSection:GetWide() - 20, mainSection:GetTall() - 20)
 	banPnl:SetHHeight(80)
 	banPnl:SetHText(v["banned_name"] .. " - " .. v["banned_steamid"])
-	banPnl:SetPos(25, 25)
+	banPnl:SetPos(10, 10)
 
 	local liLay = vgui.Create("DIconLayout", banPnl)
 	liLay:SetSize(banPnl:GetWide() - 30, banPnl:GetTall() - 70)
@@ -20,47 +20,35 @@ local function showBanInfo(k, v)
 
 	local ban_at = vgui.Create("DLabel", liLay)
 	ban_at:SetText("Banned At: " .. os.date("%m/%d/%Y %r", tonumber(v["banned_timestamp"])))
-	ban_at:SetFont("adminme_header")
+	ban_at:SetFont("adminme_section_btn")
 	ban_at:SetSize(bs_w, 25)
 	ban_at:SetTextColor(cols.main_btn_text)
 
 	local ban_len = vgui.Create("DLabel", liLay)
 	ban_len:SetText("Banned Until: " .. os.date("%m/%d/%Y %r", tonumber(v["banned_timestamp"]) + v["banned_time"]) .. " - length (".. v["banned_time"] .."s)")
-	ban_len:SetFont("adminme_header")
+	ban_len:SetFont("adminme_section_btn")
 	ban_len:SetSize(bs_w, 30)
 	ban_len:SetTextColor(cols.main_btn_text)
 
 	local banner = vgui.Create("DLabel", liLay)
 	banner:SetText("Banner: " .. v["banner_name"] .. "(" .. v["banned_steamid"] .. ")")
-	banner:SetFont("adminme_header")
+	banner:SetFont("adminme_section_btn")
 	banner:SetSize(bs_w, 30)
 	banner:SetTextColor(cols.main_btn_text)
 
 	local reason = vgui.Create("DLabel", liLay)
 	reason:SetText("Reason: " .. v["banned_reason"])
-	reason:SetFont("adminme_header")
+	reason:SetFont("adminme_section_btn")
 	reason:SetSize(bs_w, 30)
 	reason:SetTextColor(cols.main_btn_text)
+	reason:SetWrap(true)
 
-	local bgPnl = vgui.Create("DPanel", liLay)
-	bgPnl:SetSize(liLay:GetWide(), 100)
-	function bgPnl:Paint( w, h )
-		draw.RoundedBox(8, 0, 0, w, h, cols.ctrl_text_entry)
-		draw.RoundedBox(8, 1, 1, w - 2, h - 2, cols.ctrl_text_disabled)
-	end
-
-	local layout = vgui.Create("DIconLayout", bgPnl)
-	layout:SetSize(bgPnl:GetWide() - 30, 35)
-	layout:SetPos(15, 32.5)
-	layout:SetSpaceY(100)
-	layout:SetSpaceX(0)
-
-	local execute = vgui.Create("DButton", layout)
+	local execute = vgui.Create("DButton", liLay)
 	execute:SetSize(175, 35)
 	execute:SetText("")
 	function execute:Paint(w, h)
 		local col = cols.main_btn_bg
-		local textCol = Color(0, 0, 0)
+		local textCol = cols.header_text
 
 		if (self:IsHovered()) then
 			col = cols.main_btn_hover
@@ -70,8 +58,8 @@ local function showBanInfo(k, v)
 			col = cols.main_btn_disabled
 		end
 
-		draw.RoundedBox(4, 0, 0, w, h, cols.main_btn_outline)
-		draw.RoundedBox(4, 1, 1, w - 2, h - 2, col)
+		draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
+		draw.RoundedBox(0, 1, 1, w - 2, h - 2, col)
 		draw.SimpleText("Set Ban Inactive", "adminme_btn_small", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	end
 	function execute:DoClick()

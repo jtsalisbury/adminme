@@ -19,24 +19,12 @@ local function showWarnings(sid, data, sc)
 	local warnings  = data.warningData
 
 	for k,v in ndoc.pairs(warnings) do
-
-		local panel = sc:Add("DPanel")
+		local panel = sc:Add("am.HeaderPanel")
 		panel:SetWide(sc:GetWide())
-		panel:SetTall(20)
-		function panel:Paint(w, h)
-			draw.RoundedBox(0, 0, 0, w, h, cols.main_btn)
-		end
+		panel:SetHHeight(80)
+		panel:SetHText("Warning #" .. k)
 
-		local height = 0
-
-		local header = vgui.Create("DLabel", panel)
-		header:SetPos(10, 5)
-		header:SetText("Warning # " .. k .. "/" .. warnCount)
-		header:SetFont("adminme_btn_small")
-		header:SizeToContents()
-		header:SetTextColor(cols.main_btn_text)
-
-		height = height + header:GetTall()
+		local height = 40
 
 		local admin = vgui.Create("DLabel", panel)
 		admin:SetPos(10, 10 + height)
@@ -119,13 +107,13 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 		activePlayer = nil
 
 		local warnScroll = vgui.Create("DScrollPanel", main)
-		warnScroll:SetSize(main:GetWide(), main:GetTall() - 10)
-		warnScroll:SetPos(5, 5)
+		warnScroll:SetSize(main:GetWide() - 20, main:GetTall() - 10)
+		warnScroll:SetPos(10, 10)
 
 		local liLay = vgui.Create("DIconLayout", warnScroll)
 		liLay:SetSize(warnScroll:GetWide(), warnScroll:GetTall())
 		liLay:SetPos(0, 0)
-		liLay:SetSpaceY(5)
+		liLay:SetSpaceY(10)
 
 		local sbar = warnScroll:GetVBar()
 		sbar:SetSize(0, 0)

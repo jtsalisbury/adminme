@@ -21,10 +21,10 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		main:Clear()
 
 		local headerPanel = vgui.Create("am.HeaderPanel", main)
-		headerPanel:SetSize(main:GetWide() - 50, main:GetTall() - 50)
+		headerPanel:SetSize(main:GetWide() - 20, main:GetTall() - 20)
 		headerPanel:SetHHeight(80)
 		headerPanel:SetHText(cmd)
-		headerPanel:SetPos(25, 25)
+		headerPanel:SetPos(10, 10)
 
 		local pStr = ""
 		for k,v in ndoc.pairs(info.params) do
@@ -38,15 +38,15 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		end
 
 		local example = vgui.Create("am.DTextEntry", headerPanel)
-		example:SetSize(headerPanel:GetWide() - 30, 40)
-		example:SetPos(15, 55)
+		example:SetSize(headerPanel:GetWide() - 20, 40)
+		example:SetPos(10, 50)
 		example:SetDisabled(true)
 		example:SetPlaceholder("am_" .. cmd .. " " .. pStr)
 
 		local help = vgui.Create("DLabel", headerPanel)
-		help:SetSize(headerPanel:GetWide() - 30, 40)
-		help:SetPos(15, 100)
-		help:SetFont("adminme_header")
+		help:SetSize(headerPanel:GetWide() - 20, 40)
+		help:SetPos(10, 100)
+		help:SetFont("adminme_btn_small")
 		help:SetTextColor(cols.header_text)
 		help:SetAutoStretchVertical(true)
 		help:SetText(info.help)
@@ -58,18 +58,18 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		local pCount = table.Count(info.params)
 
 		local bgPnl = vgui.Create("DPanel", headerPanel)
-		bgPnl:SetSize(headerPanel:GetWide() - 30, 100)
-		bgPnl:SetPos(15, 55 + example:GetTall() + 15 + help:GetTall() + 15)
+		bgPnl:SetSize(headerPanel:GetWide() - 20, 100)
+		bgPnl:SetPos(10, 55 + example:GetTall() + 15 + help:GetTall() + 15)
 		function bgPnl:Paint( w, h )
-			draw.RoundedBox(8, 0, 0, w, h, cols.ctrl_text_entry)
-			draw.RoundedBox(8, 1, 1, w - 2, h - 2, cols.ctrl_text_disabled)
+			draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_text_entry)
+			draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.container_bg)
 		end
 
 		local layout = vgui.Create("DIconLayout", bgPnl)
-		layout:SetSize(bgPnl:GetWide() - 30, 35)
-		layout:SetPos(15, 32.5)
+		layout:SetSize(bgPnl:GetWide() - 20, 35)
+		layout:SetPos(10, 32.5)
 		layout:SetSpaceY(100)
-		layout:SetSpaceX(0)
+		layout:SetSpaceX(10)
 
 		local pCount = 1
 		for k,v in ndoc.pairs(info.params) do
@@ -96,8 +96,8 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				entry:SetSize(itemWidth, layout:GetTall())
 				entry:SetFont("adminme_ctrl")
 				function entry:Paint(w, h)
-					draw.RoundedBox(4, 0, 0, w, h, cols.ctrl_entry_entry)
-					draw.RoundedBox(4, 1, 1, w - 2, h - 2, Color(255, 255, 255))
+					draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
+					draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
 				end
 				function entry:DoClick()
 					if (self:IsMenuOpen()) then
@@ -114,8 +114,8 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				        dlabel:SetFont("adminme_ctrl")
 
 				        function dlabel:Paint(w, h)
-				            draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_entry_entry)
-							draw.RoundedBox(0, 1, 1, w - 2, h - 2, Color(255, 255, 255))
+				            draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
+							draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
 				        end
 				    end
 				end
@@ -145,8 +145,8 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 
 				local entry = vgui.Create("am.DTextEntry", layout)
 				entry:SetSize(itemWidth, layout:GetTall())
+				entry:SetFont("adminme_ctrl")
 				entry:SetPlaceholder(txt)
-				entry:SetTheme("LIGHT")
 
 				function entry:OnTextChanged()
 					paramStor[ curPos ] = '"' .. self:GetValue() .. '"'
@@ -157,8 +157,8 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				entry:SetSize(itemWidth, layout:GetTall())
 				entry:SetFont("adminme_ctrl")
 				function entry:Paint(w, h)
-					draw.RoundedBox(4, 0, 0, w, h, cols.ctrl_entry_entry)
-					draw.RoundedBox(4, 1, 1, w - 2, h - 2, Color(255, 255, 255))
+					draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
+					draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
 				end
 				function entry:DoClick()
 					if (self:IsMenuOpen()) then
@@ -244,8 +244,8 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				col = cols.main_btn_disabled
 			end
 
-			draw.RoundedBox(4, 0, 0, w, h, cols.main_btn_outline)
-			draw.RoundedBox(4, 1, 1, w - 2, h - 2, col)
+			draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
+			draw.RoundedBox(0, 1, 1, w - 2, h - 2, col)
 			draw.SimpleText("Execute", "adminme_btn_small", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		end
 		function execute:DoClick()

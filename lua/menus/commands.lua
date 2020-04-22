@@ -133,8 +133,6 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 
 				function entry:OnSelect(ind, val)
 					paramStor[ curPos ] = val
-
-					PrintTable(paramStor)
 				end
 
 			elseif (type == "string" or type == "number") then
@@ -220,8 +218,6 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 					end
 
 					paramStor[ curPos ] = val
-
-					PrintTable(paramStor)
 				end
 				
 			end
@@ -252,7 +248,6 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 			local str = "am_" .. cmd
 
 			for k,v in pairs(paramStor) do
-				print(k .. " : " .. v)
 				str = str .. " " .. v
 			end
 

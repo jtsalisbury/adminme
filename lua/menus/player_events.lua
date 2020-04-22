@@ -50,7 +50,6 @@ hook.Add("AddAdditionalMenuSections", "am.addPlayerEventsSection", function(stor
 			end
 
 			function ev:DoClick()
-				print("RIGHT")
 
 				local menu = DermaMenu()
 				menu:SetPos(gui.MousePos())

@@ -4,8 +4,6 @@ local activeReport
 local function showReportInfo(data)
 	activeReport = data["id"]
 
-	PrintTable(data)
-
 	mainSection:Clear()
 
 	local headerPanel = vgui.Create("am.HeaderPanel", mainSection)

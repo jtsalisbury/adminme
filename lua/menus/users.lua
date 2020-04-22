@@ -14,9 +14,9 @@ hook.Add("AddAdditionalMenuSections", "am.addUsersMenu", function(stor)
 	local function populateList(scroller, main)
 		main:Clear()
 
-		local ourHeir = LocalPlayer():getHeirarchy()
+		local ourHeir = LocalPlayer():getHierarchy()
 		for k,v in pairs(player.GetAll()) do
-			if (ourHeir < v:getHeirarchy()) then
+			if (ourHeir < v:getHierarchy()) then
 				continue
 			end
 

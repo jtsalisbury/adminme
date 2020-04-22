@@ -7,13 +7,14 @@ local function initDB()
 		print("Connected to db!")
 		
 		print("Creating default tables...")
-
+	
+		// TODO: insert default ranks and servers
 		--schema for database!
 		self:create("ranks")
 			:create("id", "INTEGER NOT NULL AUTO_INCREMENT")
 			:create("rank", "varchar(40) NOT NULL")
 			:create("perms", "varchar(400) NOT NULL")
-			:create("heirarchy", "INTEGER NOT NULL")
+			:create("hierarchy", "INTEGER NOT NULL")
 			:primaryKey("id")
 		:execute()
 
@@ -21,8 +22,9 @@ local function initDB()
 			:create("id", "INTEGER NOT NULL AUTO_INCREMENT")
 			:create("name", "varchar(100) NOT NULL")
 			:create("steamid", "varchar(240) NOT NULL")
-			:create("rank", "varchar(255) NOT NULL")
-			:create("expires", "varchar(255) NOT NULL default 0")
+			:create("rankid", "INTEGER NOT NULL")
+			:create("expires", "INTEGER(32) NOT NULL default 0")
+			:create("serverid", "INTEGER(11) NOT NULL")
 			:primaryKey("id")
 		:execute()
 
@@ -85,7 +87,7 @@ local function initDB()
 		:execute()
 
 		self:create("servers")
-			:create("id", "INTEGER NOT NULL AUTO_INCREMENT")
+			:create("id", "INTEGER AUTO_INCREMENT")
 			:create("ip", "varchar(255) NOT NULL")
 			:create("port", "double NOT NULL")
 			:create("name", "varchar(50) NOT NULL")
@@ -118,14 +120,9 @@ local function initDB()
 			:primaryKey("id")
 		:execute()
 
-		am.pullGroupInfo()		
-
-		self:select("servers"):callback(function(res)
-			for k,v in pairs(res) do
-				am.print("Found server " .. v["name"])
-				ndoc.table.am.servers[v["name"]] = {v["ip"], v["port"]}
-			end
-		end):execute()
+		am.pullServerInfo()
+		am.pullGroupInfo()	
+		am.checkAllExpired()
 
 		local sits = file.Read("adminme_sit_positions_".. game.GetMap() .. ".txt", "DATA")
 		if (sits) then
@@ -140,6 +137,7 @@ local function initDB()
 	end
 
 	function am.db:onError(query)
+		print('error')
 		if (query:status() == mysqloo.DATABASE_NOT_CONNECTED) then
 			adminme.db:connect()
 		end
@@ -170,6 +168,7 @@ hook.Add("PlayerAuthed", "am.CheckBans", function(ply)
 
 	am.checkBan(steamid, ip, ply)
 
+	// TODO: Check family share
 	/*http.Fetch(
 		string.format("http://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v0001/?key=%s&format=json&steamid=%s&appid_playing=4000",
 			am.config.api_key,
@@ -193,26 +192,7 @@ hook.Add("PlayerAuthed", "am.CheckBans", function(ply)
 end)
 
 hook.Add("PlayerDisconnected", "am.SaveTimes", function(ply)
-	local timeToAdd = CurTime() - ply._joinTime
-
-	if (ply.rank_expires_on && #ply.rank_expires_on > 0) then
-		timer.Destroy("rank_expire_check_"..ply:SteamID())
-	end
-
-	local sid = ply:SteamID()
-	local nick = ply:Nick()
-
-	local query = am.db:select("play_times")
-		query:where("steamid", sid)
-		query:callback(function(res)
-			if (#res == 1) then
-				print("Updating...")
-				am.db:query("UPDATE `play_times` SET `play_time_seconds` = `play_time_seconds` + "..timeToAdd..", `last_join` = "..os.time().." WHERE `steamid` = '"..sid.."'")
-			else
-				am.db:query("INSERT INTO `play_times` (`steamid`, `nick`, `last_join`, `play_time_seconds`) VALUES ('"..sid.."', '"..nick.."', "..os.time()..","..timeToAdd..")")
-			end
-		end)
-	query:execute()
+	am.updatePlayTime(ply)
 
 	if (am.config.joinLeaveMessages) then
 		am.notify(nil, "Player ", am.green, ply:Nick(), am.def, " ("..ply:SteamID()..") has left!")

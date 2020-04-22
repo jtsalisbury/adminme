@@ -16,7 +16,7 @@ am.addCMD("report", 'Report a player', 'Administration', function(caller, target
 		:insert("creator_nick", caller:Nick())
 		:insert("target_steamid", target:SteamID())
 		:insert("target_nick", target:Nick())
-		:insert("server", am.config.server_id)
+		:insert("server", am.config.server_name)
 		:insert("state", 0)
 		:insert("reason", reason)
 		:callback(function(res)
@@ -57,7 +57,7 @@ hook.Add("PlayerInitialSpawn", "am.activeReports", function(ply)
 		if (ply:IsAdmin()) then
 			local q = am.db:select("reports")
 				:where("state", 0)
-				:where("server", am.config.server_id)
+				:where("server", am.config.server_name)
 				:callback(function(res)
 					local count = #res
 

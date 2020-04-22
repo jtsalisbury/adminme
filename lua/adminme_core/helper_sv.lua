@@ -3,6 +3,7 @@ function am.notify(ply, ...)
 
 	local tbl = {...}
 	local tTbl = {}
+
 	for k,v in pairs(tbl) do
 		if (type(v) == "number") then
 			v = tostring(v)
@@ -20,89 +21,102 @@ function am.print(...)
 	print("[AdminMe]: ", ...)
 end
 
-function am.removeFromRank(caller, target, rank, server)
-	local servers = string.Explode(",", server)
-	local allGood = true
-	for k,v in pairs(servers) do
-		if (not ndoc.table.am.servers[ v ] and v != "global") then
-			allGood = false
-		end
-	end
+function am.addToRank(caller, target, rankid, serverid, expireTime)
+	// Verify the servers exist
+	if (!ndoc.table.am.servers[ serverid ] && serverid != 0) then
+		am.notify(caller, "Server specified is incorrect! Please use only those from below!")
 
-	if (not allGood) then
-		am.notify(caller, "One or more servers specified are incorrect! Please use only those from below!")
-
-		am.notify(caller, "global")
 		for k,v in ndoc.pairs(ndoc.table.am.servers) do
-			am.notify(caller, k)
+			am.notify(caller, v.name)
 		end
 
 		return
 	end
 
-	local allGood = false
-	for k,v in ndoc.pairs(ndoc.table.am.permissions) do
-		if (k == rank) then
-			allGood = true
-		end
+
+	// Verify the user has the rank
+	local rankAlreadySet = false
+	if (ndoc.table.am.users[target:SteamID()][rankid] && ndoc.table.am.users[target:SteamID()][rankid][serverid]) then
+		am.notify(caller, "The user is already that rank on that server - this will overwrite any expiration time")
+		rankAlreadySet = true
 	end
 
-	if (not allGood) then
+	// Verify the rank exists
+	if (!ndoc.table.am.permissions[rankid]) then
 		am.notify(caller, "Invalid rank specified! Please use only those below!")
 
-		for k,v in ndoc.pairs(ndoc.table.am.permissions) do
-			am.notify(caller, k)
+		for rankid, rankInfo in ndoc.pairs(ndoc.table.am.permissions) do
+
+			am.notify(caller, rankInfo.name)
+		end
+	end
+
+	// Get an updated expiration time
+	expireTime = expireTime && expireTime + os.time() || 0
+	
+	// Update the database
+	if (rankAlreadySet) then
+		am.db:update("users"):update("expires", expireTime):where("steamid", target:SteamID()):where("rankid", rankid):where("serverid", serverid):execute()
+	else
+		am.db:insert("users"):insert("expires", expireTime):insert("steamid", target:SteamID()):insert("rankid", rankid):insert("serverid", serverid):insert("name", target:Nick()):execute()
+	end
+
+	ndoc.table.am.users[target:SteamID()][rankid] = ndoc.table.am.users[target:SteamID()][rankid] || {}
+	ndoc.table.am.users[target:SteamID()][rankid][serverid] = ndoc.table.am.users[target:SteamID()][rankid][serverid] || {}
+	ndoc.table.am.users[target:SteamID()][rankid][serverid].expires = expireTime
+end
+
+function am.removeFromRank(caller, target, rankid, serverid)
+	// Verify the servers exist
+	if (serverid && !ndoc.table.am.servers[ serverid ] && serverid != 0) then
+		am.notify(caller, "Server specified is incorrect! Please use only those from below!")
+
+		for k,v in ndoc.pairs(ndoc.table.am.servers) do
+			am.notify(caller, v.name)
 		end
 
 		return
 	end
 
-	local q = am.db:select("users")
-		q:where("steamid", target:SteamID())
-		q:limit(1)
-		q:callback(function(res)
-			if (table.Count(res) == 1) then
-				local tempConstr = util.JSONToTable(res[1]["rank"])
+	// Verify the user has the rank
+	if (rankdid && !ndoc.table.am.users[target:SteamID()][rankid]) then
+		am.notify(caller, "Invalid rank specified! Please use only those below!")
 
-				if (tempConstr[ rank ]) then
-					local tempHold = tempConstr[ rank ]
+		for rankid,v in ndoc.pairs(ndoc.table.am.users[target:SteamID()]) do
+			local rankName = ndoc.table.am.permissions[rankid].name
 
-					if (server == "global") then
-						tempConstr[ rank ] = nil
-					else
-						for k,v in pairs(servers) do
-							if (table.HasValue(tempHold, v)) then
-								table.RemoveByValue(tempHold, v)
-							end
-						end
+			am.notify(caller, rankName)
+		end
 
-						if (table.Count(tempHold) == 0) then
-							tempConstr[ rank ] = nil
-						else
-							tempConstr[ rank ] = tempHold
-						end
-					end
+		return
+	end
 
-					local tempTimes = util.JSONToTable(res[1]["expires"])
-					tempTimes[ rank ] = nil
+	// Delete row entry
+	if (rankid && serverid != nil) then // Delete rank on server
+		am.db:delete("users"):where("steamid", target:SteamID()):where("rankid", rankid):where("serverid", serverid):execute()
+		ndoc.table.am.users[target:SteamID()][rankid][serverid] = nil
 
-					tempTimes = util.TableToJSON(tempTimes)
-
-					am.db:update("users"):update("rank", util.TableToJSON(tempConstr)):update("name", target:Nick()):where("steamid", target:SteamID()):update("expires", tempTimes):execute()
-
-					am.notify(nil, am.green, caller:Nick(), am.def, " has removed ", am.red, target:Nick(), am.def, " from ", am.red, rank, am.def, " on ", am.red, server)
-				else
-					am.notify(caller, "This user is not a part of that rank on any server!")
-				end
-			end
-
-			am.pullUserInfo(target)
-		end)
-	q:execute()
+		// If there are no scopes left, remove the rank
+		local entryCount = 0
+		for k,v in ndoc.pairs(ndoc.table.am.users[target:SteamID()][rankid]) do
+			entryCount = entryCount + 1
+		end
+		
+		// Remove user from rank entirely if there's nothing there
+		if (entryCount == 0) then
+			ndoc.table.am.users[target:SteamID()][rankid] = nil
+		end
+		//if (table.Count(ndoc.table.am.users[target:SteamID()][rankid]) == 0)
+	elseif (rankid) then // Delete all servers with that rank
+		am.db:delete("users"):where("steamid", target:SteamID()):where("rankid", rankid):execute()
+		ndoc.table.am.users[target:SteamID()][rankid] = nil
+	else // Delete all ranks on all servers
+		am.db:delete("users"):where("steamid", target:SteamID()):execute()
+		ndoc.table.am.users[target:SteamID()] = am.getDefaultUserProfile()
+	end
 end
 
 function am.addPlayerEvent(target, event)
-
 	target.events = target.events or {}
 
 	table.insert(target.events, {["ev"] = event, ["time"] = os.time()})
@@ -117,99 +131,165 @@ function am.addPlayerEvent(target, event)
 	q:execute()
 end
 
+function am.pullServerInfo()
+	am.db:select("servers"):callback(function(res)
+		// Grab all servers
+		for k,v in pairs(res) do
+			am.print("Found server " .. v["name"])
+			ndoc.table.am.servers[v["id"]] = {ip = v["ip"], port = v["port"], name = v["name"]}
+		end
+	end):execute()
+end
+
+function am.checkExpiredRank(ply)
+	if (!ndoc.table.am.users[ply:SteamID()]) then
+		return
+	end
+
+	// Loop through player's rank
+	for rankid, info in ndoc.pairs(ndoc.table.am.users[ply:SteamID()]) do
+		if (!info) then
+			continue
+		end
+
+		for scope, scopeInfo in ndoc.pairs(info) do
+			// Ensure the rank isn't permenant
+			if (scopeInfo.expires == 0) then
+				continue
+			end
+
+			print(rankid)
+			local rankName = ndoc.table.am.permissions[rankid].name
+
+			// Test for expiration
+			if (scopeInfo.expires <= os.time()) then
+				am.removeFromRank(ply, ply, rankid, scope)
+
+				am.notify(ply, "Your rank of ", am.green, rankName, am.def, " has expired and you've been removed!")
+				am.notify(nil, am.green, ply:Nick(), am.def, " has been auto-removed from ", am.red, rankName)
+				continue
+			else
+				local expire_time = os.date("%m/%d/%Y - %H:%M:%S", v)
+				am.notify(ply, "Your rank of ", am.green, rankName, am.def, " will expire on ", am.red, expire_time)
+			end
+		end
+	end
+end
+
+// Function to loop through all the players and check if they're rank has expired
+function am.checkAllExpired()
+	timer.Create("am.rank_expiration_check", am.config.expire_check_time, 0, function()
+		am.print("Checking for expired ranks..")
+		for k,v in pairs(player.GetAll()) do
+			am.checkExpiredRank(v)
+		end
+	end)
+end	
+
+function am.getDefaultUserProfile()
+	// TODO: These should be removed once config can be saved
+	local defaultRankId = nil
+	for rankid,rankinfo in ndoc.pairs(ndoc.table.am.permissions) do
+		if (rankinfo.name == am.config.default_rank) then
+			defaultRankId = rankid
+		end
+	end
+
+	return {
+		[defaultRankId] = { 
+			[0] = {
+				expires = 0
+			}
+			
+		}
+	}	
+end
+
 function am.pullUserInfo(ply)
 	if (not am.db.connection) then
 		am.db:connect()
 	end
 
-	local query = am.db:select("users"):where("steamid", ply:SteamID()):limit(1):callback(function(res)
-			if (!IsValid(ply)) then
-				return
+	// A default entry for the default rank
+	ndoc.table.am.users[ ply:SteamID() ] = am.getDefaultUserProfile()
+
+	// Select all user info
+	local query = am.db:select("users"):where("steamid", ply:SteamID()):callback(function(res)
+		if (!IsValid(ply)) then
+			return
+		end
+
+		// Default construct
+		local ranks = am.getDefaultUserProfile()
+
+		for k, row in pairs(res) do	
+			// Make sure the server exists
+			if (!ndoc.table.am.servers[row["serverid"]]) then
+				am.removeFromRank(ply, ply, row["rankid"], row["serverid"])
+				continue
 			end
 
-			ndoc.table.am.users[ ply:SteamID() ] = {
-				[am.config.default_rank] = {"global"}
+			// Make sure the rank still exists
+			if (!ndoc.table.am.permissions[row["rankid"]]) then
+				am.removeFromRank(ply, ply, row["rankid"], row["serverid"]) 
+				continue
+			end
+
+			// Structure: user{} -> rank id -> scope id -> expiresOn 
+			ranks[ row["rankid"] ] = ranks[ row["rankid"] ] || { }
+			ranks[ row["rankid"] ][row["serverid"]] = {
+				expires = row["expires"]
 			}
+		end
 
-			if (table.Count(res) == 0) then
-				return
-			end
+		ndoc.table.am.users[ply:SteamID()] = ranks;
+		
+		// We add all ranks regardless, but now let's see if one is expired
+		am.checkExpiredRank(ply)
+	end):execute()
 
-			local row = res[1]
-			local exp = util.JSONToTable(row["expires"]) or {}
-			local ranks = util.JSONToTable(row["rank"]) or {}
+	// Get the current play time for the user
+	am.db:select("play_times"):where("steamid", ply:SteamID()):callback(function(res)
+		// No play time :(
+		if (#res == 0) then
+			ndoc.table.am.play_times[ply:SteamID()] = 0
+			return
+		end
 
-			for k,v in pairs(ranks) do
-				if (!table.HasValue(v, "global") and !table.HasValue(v, am.config.server_id)) then
-					if (exp[k]) then
-						exp[k] = nil
-					end
-
-					ranks[k] = nil
-				end
-			end
-
-			for k,v in pairs(exp) do
-				if (os.time() >= v) then
-					am.removeFromRank(ply, ply, k, "global")
-
-					exp[k] = nil
-					am.notify(ply, "Your rank of ", am.green, k, am.def, " has expired and you've been removed!")
-
-				else
-					local expire_time = os.date("%m/%d/%Y - %H:%M:%S", v)
-					am.notify(ply, "Your rank of ", am.green, k, am.def, " will expire on ", am.red, expire_time)
-				end
-			end
-
-			if (table.Count(exp) > 0) then
-				ply.rank_expires_on = exp
-
-				local sid = ply:SteamID()
-				timer.Create("rank_expire_check_" .. ply:SteamID(), am.config.expire_check_time, 0, function()
-
-					if (!IsValid(ply)) then
-
-						timer.Destroy("rank_expire_check_" .. sid)
-						return
-					end
-
-					for k,v in pairs(ply.rank_expires_on) do
-						if (v <= os.time()) then
-							am.removeFromRank(ply, ply, k, "global")
-
-							ply.rank_expires_on[ k ] = nil
-
-							am.notify(ply, "Your rank of ", am.green, k, am.def, " has expired and you've been removed!")
-						end
-					end
-
-					if (table.Count(ply.rank_expires_on) == 0) then
-						timer.Destroy("rank_expire_check_" .. sid)
-					end
-				end)
-			end
-
-			ndoc.table.am.users[ ply:SteamID() ] = ranks
-		end):execute()
+		ndoc.table.am.play_times[ply:SteamID()] = res[1]["play_time_seconds"];
+	end):execute()
 end
 
 function am.pullGroupInfo()
 	am.db:select("ranks"):callback(function(res)
 		for k,v in pairs(res) do
-			local rank = v["rank"]
+			local rankid = v["id"]
+			local rankName = v["rank"]
 			local perms = util.JSONToTable(v["perms"])
-			local heir = v["heirarchy"]
+			local hierarchy = v["hierarchy"]
 
-			ndoc.table.am.permissions[rank] = {perm = perms, heir = heir}
+			ndoc.table.am.permissions[rankid] = {perm = perms, hierarchy = hierarchy, name = rankName}
 
-			am.print("Found user group: " .. rank)
+			am.print("Found user group: " .. rankName)
 		end
 
 		hook.Call("am.RanksLoaded", GAMEMODE)
 	end):execute()
 end
 
+// Update the play time of the current user
+function am.updatePlayTime(ply) 
+	local newTime = ply:getPlayTime()
+
+	// Zero play time indicates a new player!
+	if (ndoc.table.am.play_times[ply:SteamID()] != 0) then
+		am.db:insert("play_times"):insert("steamid", ply:SteamID()):insert("nick", ply:Nick()):insert("last_join", os.time()):insert("play_time_seconds", newTime):execute()
+	else
+		am.db:update("play_times"):update("last_join", os.time()):update("play_time_seconds", newTime):where("steamid", ply:SteamID()):execute()
+	end	
+end
+
+// TODO: Update warnings - get rid of json!
 function am.pullWarningInfo(ply)
 	if (!IsValid(ply)) then return end
 

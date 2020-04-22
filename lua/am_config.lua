@@ -1,4 +1,5 @@
-am.config.server_id = "ttt"
+am.config.server_name = "ttt"
+am.config.server_id = 1
 am.config.default_rank = "user"
 am.config.expire_check_time = 15
 am.config.join_leave_notifications = true

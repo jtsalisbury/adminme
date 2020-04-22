@@ -5,7 +5,6 @@ am.red   = Color(255, 25, 25)
 am.def   = Color(255, 255, 255)
 
 am.config = am.config or {}
-print('test')
 if (SERVER) then
 	resource.AddFile("resource/fonts/Roboto-Regular.ttf")
 
@@ -34,6 +33,7 @@ if (SERVER) then
 		ndoc.table.am.warnings = ndoc.table.am.warnings or {}
 		ndoc.table.am.commands = ndoc.table.am.commands or {}
 		ndoc.table.am.events   = ndoc.table.am.events or {}
+		ndoc.table.am.play_times = ndoc.table.am.play_times or {}
 
 		ezdb = include("ezdb/load_sv.lua")
 
@@ -47,13 +47,11 @@ if (SERVER) then
 
 		local files = file.Find("adminme_commands/*.lua", "LUA")
 		for k,v in pairs(files) do
-			am.print('Loaded ' .. v)
 			include("adminme_commands/"..v)
 		end
 
 		local files = file.Find("menus/*.lua", "LUA")
 		for k,v in pairs(files) do
-			am.print("Downloading menu " .. v)
 			AddCSLuaFile("menus/" .. v)
 		end
 	end)
@@ -64,8 +62,6 @@ else
 		include("adminme_core/main_sh.lua")
 
 		local files = file.Find("menus/*.lua", "LUA")
-
-		PrintTable(files)
 
 		for k,v in pairs(files) do
 			print("Including menu " .. v)

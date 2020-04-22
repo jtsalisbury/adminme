@@ -4,6 +4,8 @@ util.AddNetworkString("am.endSong")
 am.music = util.JSONToTable(file.Read("am_music.txt", "DATA") or "[]")
 ndoc.table.am.music = am.music
 
+// TODO: music
+
 if (am.config.ttt_round_end_music) then
 	util.AddNetworkString("am.startRoundEndEvents")
 	util.AddNetworkString("am.endRoundEndEvents")

@@ -2,6 +2,7 @@ am.addCMD("sit", 'Sends a target to the sit room', 'Teleportation', function(cal
 	am.notify(nil, am.green, caller:Nick(), am.def, ' has sent ', am.red, target:Nick(), am.def, ' to the sit room.')
 	if (!am.sitpos) then am:Notify(caller, 'No sit positions available!') return end
 
+	// Cache their current position
 	target.ReturnPoint = target:GetPos()
 	target.ReturnAngle = target:GetAngles()
 
@@ -13,8 +14,9 @@ end):addParam('target', 'player'):setPerm("sit")
 
 am.addCMD("addsit", 'Adds a sit position', 'Misc', function(caller)
 	am.notify(nil, am.green, caller:Nick(), am.def, ' has added a sit position.')
-	am.sitpos = am.sitpos or {}
+	am.sitpos = am.sitpos || {}
 
+	// Insert a new sit position
 	local sits = am.sitpos
 	table.insert(am.sitpos, caller:GetPos())
 
@@ -26,6 +28,7 @@ end):setPerm("modifysit")
 am.addCMD("setsit", 'Erases all sit positions and adds a new one', 'Misc', function(caller, target)
 	am.notify(nil, am.green, caller:Nick(), am.def, ' has wiped all sit positions and added a new one!')
 
+	// Erase the sit positions
 	am.sitpos = {}
 	table.insert(am.sitpos, caller:GetPos())
 

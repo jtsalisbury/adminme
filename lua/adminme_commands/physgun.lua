@@ -1,6 +1,7 @@
 hook.Add("PhysgunPickup", "AllowPlayerPhysing", function(ply, targ)
 	if (targ:IsPlayer() and targ:IsValid()) then
-		if (ply:hasPerm("physgun") and targ:getHierarchy() < ply:getHierarchy()) then
+		// Ensure we can actually physgun them
+		if (ply:hasPerm("physgun") && targ:getHierarchy() < ply:getHierarchy()) then
 			targ:SetMoveType(MOVETYPE_NONE);
 			return true
 		else

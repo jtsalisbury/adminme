@@ -163,10 +163,7 @@ end)
 
 
 hook.Add("PlayerAuthed", "am.CheckBans", function(ply)
-	local steamid = ply:SteamID()
-	local ip = ply:IPAddress()
-
-	am.checkBan(steamid, ip, ply)
+	am.checkBan(ply)
 
 	// TODO: Check family share
 	/*http.Fetch(

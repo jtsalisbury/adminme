@@ -1,3 +1,4 @@
+// TODO: Verify
 am.addCMD("slaynr", "Marks a player for slays on n rounds", 'TTT', function(caller, target, slays)
 	if (slays < 0) then return end
 

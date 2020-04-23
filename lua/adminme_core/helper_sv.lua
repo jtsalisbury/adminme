@@ -137,6 +137,10 @@ function am.pullServerInfo()
 		for k,v in pairs(res) do
 			am.print("Found server " .. v["name"])
 			ndoc.table.am.servers[v["id"]] = {ip = v["ip"], port = v["port"], name = v["name"]}
+
+			if (v["name"] == am.config.server_name) then
+				am.config.server_id = v["id"]
+			end
 		end
 	end):execute()
 end
@@ -158,7 +162,6 @@ function am.checkExpiredRank(ply)
 				continue
 			end
 
-			print(rankid)
 			local rankName = ndoc.table.am.permissions[rankid].name
 
 			// Test for expiration
@@ -236,6 +239,7 @@ function am.pullUserInfo(ply)
 			end
 
 			// Structure: user{} -> rank id -> scope id -> expiresOn 
+			// We'll add the user to every rank they have, but we when we check, we'll only count the ones for this server
 			ranks[ row["rankid"] ] = ranks[ row["rankid"] ] || { }
 			ranks[ row["rankid"] ][row["serverid"]] = {
 				expires = row["expires"]
@@ -295,27 +299,31 @@ function am.pullWarningInfo(ply)
 
 	// Cache the user info and init warning table
 	local sid = ply:SteamID()
-	ndoc.table.am.warnings[ v["steamid"] ] = {}
 
 	// Select all the warnings for the user
 	am.db:select("warnings"):where("steamid", sid):callback(function(res)
 		if (#res == 0) then
 			return
 		end
+			
+		ndoc.table.am.warnings[ sid ] = ndoc.table.am.warnings[ sid ] || {
+			nick = ply:Nick(),
+			warnings = {},
+			warningCount = #res
+		}
 
 		// Insert warning data into networked table
-		ndoc.table.am.warnings[sid].warningCount = #res
 		for k,row in pairs(res) do
-			table.insert(ndoc.table.am.warnings[sid].warnings, {
+			ndoc.table.am.warnings[sid].warnings[k] = {
 				admin = row["admin_nick"],
 				reason = row["reason"],
 				timestamp = row["timestamp"],
 				warningNum = row["warningNum"]
-			})
+			}
 		end
 
 		if (table.Count(res) > 0) then
-			am.notify(am.getAdmins(), "Warning! ", am.def, " Player ", am.red, ply:Nick(), am.def, " is on the warning list!")
+			am.notify(am.getAdmins(), "Warning! ", am.def, "Player ", am.red, ply:Nick(), am.def, " is on the warning list!")
 		end
 	end):execute()
 end
@@ -326,20 +334,23 @@ function am.checkBan(ply, lender)
 	local ip = ply:IPAddress()
 
 	// Check to see if the user is banned via their steamid
-	local query = am.db:select("bans")
-		query:where("banned_steamid", steamid)
-		query:where("ban_active", 1)
-		query:callback(function(v)
+	local querySID = am.db:select("bans")
+		querySID:where("ban_active", 1)
+		querySID:callback(function(v)
 			if (table.Count(v) == 0) then return end
 
-			v = v[1]
+			// Loop through all possible bans	
+			for k,v in pairs(v) do
+				// If it hasn't expired or the server doesn't exist
+				if (v["banned_timestamp"] + v["banned_time"] > os.time() && ndoc.table.am.servers[v["serverid"]]) then
+					// Check for server id or global
+					if (v["serverid"] != 0 && v["serverid"] != am.config.server_id) then
+						continue
+					end
 
-			// If it hasn't expired
-			if (v["banned_timestamp"] + v["banned_time"] > os.time()) then
-
-				// Check for family sharing
-				if (lender) then
-					local query = am.db:insert("bans")
+					// Check for family sharing and ban this account too
+					if (lender) then
+						local query = am.db:insert("bans")
 						query:insert("banned_steamid", ply:SteamID())
 						query:insert("banned_name", v["banned_name"])
 						query:insert("banned_timestamp", v["banned_timestamp"])
@@ -347,61 +358,33 @@ function am.checkBan(ply, lender)
 						query:insert("banned_time", v["banned_time"])
 						query:insert("banner_steamid", v["banner_steamid"])
 						query:insert("banner_name", v["banner_name"])
-					query:execute()
-				end
+						query:execute()
+					end
 
-				// Kick the user
-				ply:Kick("You're banned!\nReason: "..v['banned_reason'].. "\nBanned by: "..v["banner_name"].."\nTime left: ".. (v["banned_timestamp"] + v["banned_time"] - os.time()) .. " seconds\nAppeal at: ".. am.config.website)
-				return
-			else
-				// Not banned, mark the ban as inactive
-				local query = am.db:update("bans")
+					// Kick the user
+					if (!IsValid(ply)) then
+						return
+					end
+					
+					// TODO: REMOVE ONCE TESTING IS DONE
+					//ply:Kick("You're banned!\nReason: "..v['banned_reason'].. "\nBanned by: "..v["banner_name"].."\nTime left: ".. (v["banned_timestamp"] + v["banned_time"] - os.time()) .. " seconds\nAppeal at: ".. am.config.website)
+				else
+					// Not banned, mark the ban as inactive
+					local query = am.db:update("bans")
 					query:update("ban_active", 0)
 					query:where("id", v["id"])
-				query:execute()
-			end
-		end)
-
-	query:execute()
-
-	// Check to see if the user is banned via their IP
-	local query = am.db:select("bans")
-		query:where("banned_ip", ip)
-		query:where("ban_active", 1)
-		query:callback(function(v)
-			if (table.Count(v) == 0) then return end
-
-			v = v[1]
-
-			// Check to see if it has expired
-			if (v["banned_timestamp"] + v["banned_time"] > os.time()) then
-
-				// Family sharing checks
-				if (lender) then
-					local query = am.db:insert("bans")
-						query:insert("banned_steamid", ply:SteamID())
-						query:insert("banned_name", v["banned_name"])
-						query:insert("banned_timestamp", v["banned_timestamp"])
-						query:insert("banned_reason", v["banned_reason"])
-						query:insert("banned_time", v["banned_time"])
-						query:insert("banner_steamid", v["banner_steamid"])
-						query:insert("banner_name", v["banner_name"])
 					query:execute()
 				end
-
-				// Kick 'em!
-				ply:Kick("You're banned!\nReason: "..v['banned_reason'].. "\nBanned by: "..v["banner_name"].."\nTime left: ".. (v["banned_timestamp"] + v["banned_time"] - os.time()) .. " seconds\nAppeal at: ".. am.config.website)
-				return
-			else
-
-				// Mark the ban as inactive
-				local query = am.db:update("bans")
-					query:update("ban_active", 0)
-					query:where("id", v["id"])
-				query:execute()
 			end
 		end)
-	query:execute()
+		
+	local queryIP = querySID
+
+	queryIP:where("banned_ip", ip)	
+	querySID:where("banned_steamid", steamid)
+
+	queryIP:execute()
+	querySID:execute()
 end
 
 // Pull bans for menu editing / viewing

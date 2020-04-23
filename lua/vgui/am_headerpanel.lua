@@ -94,7 +94,7 @@ function PANEL:Paint(w, h)
 	draw.RoundedBox(0, 0, 0, w, self.HeaderHeight, cols.head_panel_head_bg)
 	draw.RoundedBox(0, 1, self.HeaderHeight / 2, w - 2, self.HeaderHeight * 3 / 4, cols.head_panel_bg)
 
-	draw.SimpleText(self.HText, "adminme_section_btn", 15, self.HeaderHeight * 1 / 4, cols.head_panel_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	draw.SimpleText(self.HText, "adminme_section_btn", 10, self.HeaderHeight * 1 / 4, cols.head_panel_text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 end
 
 function PANEL:UpdateColours()

@@ -46,34 +46,37 @@ net.Receive("am.hudLog", function()
 end)
 
 --CapsAdmin
-function Wrap( string, width )
+function am.wrap(string, width)
 	local tbl = string.Explode( " ", string )
 	local str = { "" }
 	local pos = 1
 
 	for k,v in pairs( tbl ) do
-
 		local test = str[pos] .. " " .. v
 		local size = surface.GetTextSize( test )
 
 		if size > width - 40 then
-
 			str[pos] = string.Trim( str[pos] )
 			pos = pos + 1
 			str[pos] = ( str[pos] or "" ) .. v
-
 		else
-
 			str[pos] = str[pos] .. " " .. v
-
 		end
-
 	end
 
 	return str
 end
 
+// This is not an efficient method
+function am.getVerticalSize(str, font, availableWidth)
+	surface.SetFont(font)
+	local tW, tH = surface.GetTextSize(str)
 
+	local neededWidth = tW // total string width
+	local rowCount = math.ceil(neededWidth / availableWidth)
+
+	return tH * rowCount, tH
+end
 
 local distance_between = 20
 local rect_width = 12

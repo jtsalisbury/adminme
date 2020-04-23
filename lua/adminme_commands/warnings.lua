@@ -8,7 +8,8 @@ am.addCMD("warn", 'Warn a player', 'Administration', function(caller, target, re
 	if (fdata == nil) then
 		ndoc.table.am.warnings[ target:SteamID() ] = {
 			warningCount = 0,
-			warnings = {}
+			warnings = {},
+			nick = target:Nick()
 		}
 	end
 
@@ -16,12 +17,12 @@ am.addCMD("warn", 'Warn a player', 'Administration', function(caller, target, re
 	local warningNum = ndoc.table.am.warnings[ target:SteamID() ].warningCount + 1
 	
 	ndoc.table.am.warnings[ target:SteamID() ].warningCount = warningNum
-	table.insert(ndoc.table.am.warnings[ target:SteamID() ].warnings, {
+	ndoc.table.am.warnings[ target:SteamID() ].warnings[warningNum] = {
 		["admin"] = caller:Nick(),
 		["reason"] = reason,
 		["timestamp"] = os.time(),
 		["warningNum"] = warningNum
-	})
+	}
 	
 	// Save the new warning
 	am.db:insert("warnings")

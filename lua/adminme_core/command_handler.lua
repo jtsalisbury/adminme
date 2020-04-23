@@ -15,8 +15,9 @@ function cmd_mt:ctor(aliases, helptext, category, callback)
 
 	// Register a console command for each alias
 	for k,v in pairs(aliases) do
-		concommand.Add("am_" .. v, function(pl, cmd, args)
-			am.runCommand(pl, self, args)
+		concommand.Add("am_" .. v, function(pl, cmd, _, argStr)
+			// Default arg table passed splits wildly, pass it to our handler 
+			am.runCommand(pl, self, am.parseLine(argStr))
 		end)
 	end
 
@@ -167,7 +168,7 @@ end
 // Will return an object with server id and information
 am.argTypes["server"] = function(arg)
 	for id,info in ndoc.pairs(ndoc.table.am.servers) do
-		if (info.name == arg) then
+		if (info.name == arg || id == tonumber(arg)) then
 			return { id = id, info = info }
 		end
 	end
@@ -176,7 +177,7 @@ end
 // Will return an object with rank id and information
 am.argTypes["rank"] = function(arg)
 	for id,info in ndoc.pairs(ndoc.table.am.permissions) do
-		if (info.name == arg) then
+		if (info.name == arg || id == tonumber(arg)) then
 			return { id = id, info = info }
 		end
 	end
@@ -270,6 +271,10 @@ local quotes = {
 function am.parseLine(line)
 	local parts = {}
 
+	if (#line == 0) then
+		return parts
+	end
+
 	local index = 1
 	while index ~= nil do
 		index = string.find(line, "%S", index)
@@ -278,18 +283,18 @@ function am.parseLine(line)
 		local cur = string.sub(line, index, index)
 		if quotes[cur] then
 			// In a quote, search for the end quote
-			local closer = string.find(line, cur, index + 1)
-			local quotedString = string.sub(line, index + 1, closer && closer - 1 or nil)
+			local closer = string.find(line, cur, index + 1) 
+			local quotedString = string.sub(line, index + 1, closer && closer - 1 || nil)
 			
 			// Add it
 			table.insert(parts, quotedString)
 			
 			if not closer then break end
-			index = closer
+			index = closer + 1
 		else
 			// Not in a quote, search for the next whitespace and return the word
 			local nextSpace = string.find(line, "%s", index)
-			local word = string.sub(line, index, nextSpace && nextSpace - 1 or nil)
+			local word = string.sub(line, index, nextSpace && nextSpace - 1 || nil)
 
 			// Add it
 			table.insert(parts, word)
@@ -298,6 +303,8 @@ function am.parseLine(line)
 			index = nextSpace
 		end
 	end
+
+	PrintTable(parts)
 
 	// Return the words and phrases
 	return parts
@@ -326,7 +333,10 @@ function am.runCommand(pl, command, arguments)
 		local curVal = arguments[index]
 
 		// Convert to appropriate type
-		local converted = curVal != nil && am.argTypes[paramData.type](curVal, pl) || nil
+		local converted = nil
+		if (curVal != nil) then
+			converted = am.argTypes[paramData.type](curVal, pl)
+		end
 
 		// Make sure it's allowed
 		local isValid = true
@@ -351,10 +361,10 @@ function am.runCommand(pl, command, arguments)
 		end
 
 		// Determine if the param is missing and optional
-		if (!converted && !paramData.optional || !isValid) then
+		if (converted == nil && !paramData.optional || !isValid) then
 			am.notify(ply, "Invalid value for ", paramData.name)
 			validParams = false
-		elseif (!converted && paramData.optional) then
+		elseif (converted == nil && paramData.optional) then
 			converted = paramData.default // set to default
 		end
 

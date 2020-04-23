@@ -46,7 +46,11 @@ function mt:IsUserGroup(str)
 		return false
 	end
 
-	for rankid,v in ndoc.pairs(self:getRankIds()) do
+	for rankid,serverIds in ndoc.pairs(self:getRankIds()) do
+		if (!serverIds[am.config.server_id] && !serverIds[0]) then
+			continue
+		end
+
 		if (ndoc.table.am.permissions[rankid].name == str) then 
 			return true
 		end
@@ -92,12 +96,16 @@ function mt:getHierarchy()
 	end
 
 	// Loop through the user's ranks
-	for k,v in ndoc.pairs(ndoc.table.am.users[ self:SteamID() ]) do
-		local curHeirarchy = ndoc.table.am.permissions[ k ].hierarchy
+	for rankId,serverIds in ndoc.pairs(ndoc.table.am.users[ self:SteamID() ]) do
+		if (!serverIds[am.config.server_id] && !serverIds[0]) then
+			continue
+		end
+
+		local curHeirarchy = ndoc.table.am.permissions[ rankId ].hierarchy
 
 		if (curHeirarchy > ourLargestHeirarchy) then
 			ourLargestHeirarchy = curHeirarchy
-			ourLargestRank = k
+			ourLargestRank = rankId
 		end
 	end
 

@@ -19,9 +19,9 @@ local function generateParamString(params)
 	for k,param in ndoc.pairs(params) do
 		pStr = pStr .. " <" .. param.name
 
-		if (param.optional && param.uiDefault) then
+		if (param.optional && param.defaultUI) then
 			// TODO: consolidate this to just "default" or something, which may be hard even though we have objects returned and stuff
-			pStr = pStr .. " = " .. param.uiDefault
+			pStr = pStr .. " = " .. param.defaultUI
 		end
 
 		pStr = pStr .. ">"
@@ -29,6 +29,251 @@ local function generateParamString(params)
 
 	return pStr
 end
+
+// Here we will map types to specific creation sets
+local paramTypes = {}
+paramTypes["string"] = {
+	create = function(paramData) 
+		local placeholder = paramData.name
+
+		local entry = vgui.Create("am.DTextEntry")
+		entry:SetFont("adminme_btn_small")
+		entry:SetSize(150, 35)
+		if (paramData.defaultUI) then
+			entry:SetText(paramData.defaultUI)
+		end
+		entry:SetPlaceholder(placeholder)
+
+		return entry
+	end,
+	get = function(element)
+		return element:GetText() && "'" .. element:GetText() .. "'"
+	end
+}
+
+// Number is a derivation with setnumeric true
+paramTypes["number"] = {
+	create = function(paramData)
+		local strEle = paramTypes["string"].create(paramData)
+		strEle:SetNumeric(true)
+
+		return strEle
+	end,
+	get = function(element)
+		return element:GetText() && tonumber(element:GetText())
+	end
+}
+
+local function createCombo(paramData, options)
+	local entry = vgui.Create("DComboBox", layout)
+	entry:SetFont("adminme_btn_small")
+	entry:SetSize(150, 35)
+	function entry:Paint(w, h)
+		draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
+		draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
+	end
+
+	for k,v in pairs(options) do
+		entry:AddChoice(v)
+
+		if (paramData.defaultUI && tostring(paramData.defaultUI) == v) then
+			entry:ChooseOptionID(k)
+		end
+	end
+
+	function entry:DoClick()
+		if (self:IsMenuOpen()) then
+			return self:CloseMenu()
+		end
+		
+		self:OpenMenu()
+
+		local dmenu = self.Menu:GetCanvas():GetChildren()
+
+		for i = 1, #dmenu do
+			local dlabel = dmenu[i]
+
+			dlabel:SetFont("adminme_btn_small")
+
+			function dlabel:Paint(w, h)
+				draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_entry_entry)
+				draw.RoundedBox(0, 1, 1, w - 2, h - 2, Color(255, 255, 255))
+			end
+		end
+	end
+
+	return entry
+end
+
+paramTypes["bool"] = {
+	create = function(paramData)
+		return createCombo(paramData, {"true", "false"})
+	end,
+	get = function(element)
+		return element:GetSelected()
+	end
+}
+
+paramTypes["duration"] = {
+	create = function(paramData)
+		local container = vgui.Create("DPanel")
+		function container:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+		end
+		container:SetSize(150, 35)
+
+		// Modify a bit to add a default UI portion for the type 
+		local numEntry = paramTypes["number"].create(paramData)
+		numEntry:SetParent(container)
+
+		local typeSelect = createCombo({ defaultUI = "s" }, {"s", "min", "hr", "d", "mon", "yr"})
+		typeSelect:SetParent(container)
+
+		numEntry:SetPos(0, 0)
+		numEntry:SetSize(80, 35)
+
+		typeSelect:SetPos(90, 0)
+		typeSelect:SetSize(60, 35)
+
+		// Create controls
+		container.controls = {
+			numEntry,
+			typeSelect			
+		}
+
+		return container
+	end,
+	get = function(element)
+		local num = element.controls[1]:GetText()
+		local type = element.controls[2]:GetSelected()
+
+		if (!num || !tonumber(num) || tonumber(num) < 0) then
+			return nil
+		end
+
+		return num .. type
+	end
+}
+
+paramTypes["player"] = {
+	create = function(paramData)
+		local container = vgui.Create("DPanel")
+		function container:Paint(w, h)
+			draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+		end
+		container:SetSize(250, 35)
+
+		local players = {}
+		for k,v in pairs(player.GetAll()) do
+			table.insert(players, v:Nick())
+		end
+
+		local comboSelect = createCombo({ defaultUI = "player" }, { "steamid", "player" })
+		local playerSelect = createCombo({}, players)
+		local steamIDEntry = paramTypes["string"].create({ name = "" })
+
+		comboSelect:SetParent(container)
+		playerSelect:SetParent(container)
+		steamIDEntry:SetParent(container)
+		
+		comboSelect:SetSize(90, 35)
+		playerSelect:SetSize(150, 35)
+		steamIDEntry:SetSize(150, 35)
+
+		comboSelect:SetPos(0, 0)
+		playerSelect:SetPos(100, 0)
+		steamIDEntry:SetPos(100, 0)
+		
+		steamIDEntry:SetVisible(false)
+
+		function comboSelect:OnSelect(index, val) 
+			if (val == "steamid") then
+				steamIDEntry:SetVisible(true)
+				playerSelect:SetVisible(false)
+			else
+				steamIDEntry:SetVisible(false)
+				playerSelect:SetVisible(true)
+			end
+		end	
+
+		// Create controls
+		container.controls = {
+			comboSelect,
+			playerSelect,
+			steamIDEntry
+		}
+
+		return container
+	end,
+	get = function(element)
+		local option = element.controls[1]:GetSelected()
+		local steamIDEntry = element.controls[3]:GetText()
+		local playerEntry = element.controls[2]:GetSelected()
+
+		if (option == "steamid") then
+			if (!string.find(steamIDEntry, "STEAM_")) then
+				return nil
+			end
+			
+			return steamIDEntry
+		end
+
+		if (!playerEntry || #playerEntry == 0) then
+			return nil
+		end
+
+		return "'" .. playerEntry .. "'"
+	end
+}
+
+paramTypes["server"] = {
+	create = function(paramData) 
+		local options = {}
+		for k,info in ndoc.pairs(ndoc.table.am.servers) do
+			table.insert(options, info.name)
+		end
+
+		return createCombo(paramData, options)
+	end,
+	get = function(element)
+		return element:GetSelected()
+	end
+}
+
+paramTypes["rank"] = {
+	create = function(paramData) 
+		local options = {}
+		for k,info in ndoc.pairs(ndoc.table.am.permissions) do
+			if (info.name == am.config.default_rank) then
+				continue
+			end
+
+			table.insert(options, info.name)
+		end
+
+		return createCombo(paramData, options)
+	end,
+	get = function(element)
+		return element:GetSelected()
+	end
+}
+
+paramTypes["money"] = {
+	create = function(paramData)
+		local strEle = paramTypes["string"].get(paramData)
+		strEle:SetNumeric(true)
+
+		return strEle
+	end,
+	get = function(element)
+		local val = element:GetText()
+		if (!val || !tonumber(val) || tonumber(val) < 0) then
+			return nil
+		end
+
+		return val
+	end
+}
 
 hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 	local sorted = sortCmdsIntoCats()
@@ -63,7 +308,7 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		local pCount = table.Count(info.params)
 
 		local bgPnl = vgui.Create("DPanel", headerPanel)
-		bgPnl:SetSize(headerPanel:GetWide() - 20, 100)
+		bgPnl:SetSize(headerPanel:GetWide() - 20, 0)
 		bgPnl:SetPos(10, 55 + example:GetTall() + 15 + help:GetTall() + 15)
 		function bgPnl:Paint( w, h )
 			draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_text_entry)
@@ -71,167 +316,43 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		end
 
 		local layout = vgui.Create("DIconLayout", bgPnl)
-		layout:SetSize(bgPnl:GetWide() - 20, 35)
-		layout:SetPos(10, 32.5)
-		layout:SetSpaceY(100)
-		layout:SetSpaceX(10)
+		layout:SetSize(bgPnl:GetWide() - 20, 0)
+		layout:SetPos(10, 10)
+		layout:SetSpaceY(10)
+		layout:SetLayoutDir(LEFT)
 
-		local pCount = 1
-		for k,v in ndoc.pairs(info.params) do
-			pCount = pCount + 1
-		end
-
-		local itemWidth = (bgPnl:GetWide() - 30) / pCount
-
-		if (itemWidth > 150) then
-			itemWidth = 150
-		end
-
-		for _,param_info in ndoc.pairs(info.params) do
-			param_ident = param_info[1]
-			type  = param_info[2]
-			local default = param_info[3]
-			local argList = param_info[4]
-			local curPos = pos
-
-			local count = 0
-
-			if (argList) then
-				local entry = vgui.Create("DComboBox", layout)
-				entry:SetSize(itemWidth, layout:GetTall())
-				entry:SetFont("adminme_ctrl")
-				function entry:Paint(w, h)
-					draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
-					draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
-				end
-				function entry:DoClick()
-					if (self:IsMenuOpen()) then
-				        return self:CloseMenu()
-				    end
-				    
-				    self:OpenMenu()
-
-				    local dmenu = self.Menu:GetCanvas():GetChildren()
-
-				    for i = 1, #dmenu do
-				        local dlabel = dmenu[i]
-
-				        dlabel:SetFont("adminme_ctrl")
-
-				        function dlabel:Paint(w, h)
-				            draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
-							draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
-				        end
-				    end
-				end
-
-				local i = 1
-				for k,v in ndoc.pairs(argList) do
-					entry:AddChoice(v)
-
-					if (default and v == default) then
-						entry:ChooseOptionID(i)
-					end
-
-					i = i + 1
-				end
-
-				function entry:OnSelect(ind, val)
-					paramStor[ curPos ] = val
-				end
-
-			elseif (type == "string" or type == "number") then
-				local txt = param_ident
-				if (default) then
-					txt = param_ident .. " (def: " .. default .. ")"
-				end
-
-				local entry = vgui.Create("am.DTextEntry", layout)
-				entry:SetSize(itemWidth, layout:GetTall())
-				entry:SetFont("adminme_ctrl")
-				entry:SetPlaceholder(txt)
-
-				function entry:OnTextChanged()
-					paramStor[ curPos ] = '"' .. self:GetValue() .. '"'
-				end
-
-			elseif (type == "player" or type == "time_type" or type == "bool") then
-				local entry = vgui.Create("DComboBox", layout)
-				entry:SetSize(itemWidth, layout:GetTall())
-				entry:SetFont("adminme_ctrl")
-				function entry:Paint(w, h)
-					draw.RoundedBox(0, 0, 0, w, h, cols.main_btn_outline)
-					draw.RoundedBox(0, 1, 1, w - 2, h - 2, cols.main_btn_bg)
-				end
-				function entry:DoClick()
-					if (self:IsMenuOpen()) then
-				        return self:CloseMenu()
-				    end
-				    
-				    self:OpenMenu()
-
-				    local dmenu = self.Menu:GetCanvas():GetChildren()
-
-				    for i = 1, #dmenu do
-				        local dlabel = dmenu[i]
-
-				        dlabel:SetFont("adminme_ctrl")
-
-				        function dlabel:Paint(w, h)
-				            draw.RoundedBox(0, 0, 0, w, h, cols.ctrl_entry_entry)
-							draw.RoundedBox(0, 1, 1, w - 2, h - 2, Color(255, 255, 255))
-				        end
-				    end
-				end
-
-				local sids = {}
-				if (type == "player") then
-					for k,v in pairs(player.GetAll()) do
-						entry:AddChoice('"' .. v:Nick() .. '"')
-
-						sids[k] = v:SteamID()
-					end
-				end
-
-				if (type == "time_type") then
-					local i = 1
-					for k,v in pairs({"s", "min", "hr", "d", "m", "yr"}) do
-						entry:AddChoice(v)
-
-						if (default and v == default) then
-							entry:ChooseOptionID(i)
-						end
-
-						i = i + 1
-					end
-				end
-
-				if (type == "bool") then
-					entry:AddChoice("true")
-					entry:AddChoice("false")
-
-					if (default == "true") then
-						entry:ChooseOption(1)
-					elseif (default == "false") then
-						entry:ChooseOption(2)
-					end
-				end
-
-				function entry:OnSelect(ind, val)
-					if (type == "player") then
-						val = '"' .. sids[ ind ] .. '"'
-					end
-
-					paramStor[ curPos ] = val
-				end
-				
+		local entries = {}
+		local numParams = 0
+		for k,paramInfo in ndoc.pairs(info.params) do
+			local createdEntry = paramTypes[paramInfo.type].create(paramInfo)
+			local paramContainer = layout:Add("DPanel")
+			paramContainer:SetSize(layout:GetWide(), 35)
+			function paramContainer:Paint(w, h)
+				draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
 			end
 
-			pos = pos + 1
+			local paramLabel = vgui.Create("DLabel", paramContainer)
+			paramLabel:SetFont("adminme_btn_small")
+			paramLabel:SetTextColor(cols.header_text)
+			paramLabel:SetText(paramInfo.name)
+			paramLabel:SetSize(100, 35)
+			paramLabel:SetPos(0, 0)
+
+			createdEntry:SetParent(paramContainer)
+			createdEntry:SetPos(110, 0)
+			table.insert(entries, {
+				type = paramInfo.type,
+				entry = createdEntry
+			})
+
+			numParams = numParams + 1
 		end
+		local expectedParamHeight = (numParams + 1) * 35 + (10 * numParams)
+		bgPnl:SetTall(expectedParamHeight + 20)
+		layout:SetTall(expectedParamHeight)
 
 		local execute = vgui.Create("DButton", layout)
-		execute:SetSize(itemWidth, layout:GetTall())
+		execute:SetSize(150, 35)
 		execute:SetText("")
 		function execute:Paint(w, h)
 			local col = cols.main_btn_bg
@@ -252,11 +373,17 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		function execute:DoClick()
 			local str = "am_" .. cmd
 
-			for k,v in pairs(paramStor) do
-				str = str .. " " .. v
+			for k,entryInfo in pairs(entries) do
+				local val = paramTypes[entryInfo.type].get(entryInfo.entry)
+
+				if (val == nil) then 
+					return
+				end
+
+				str = str .. " " .. val
 			end
 
-			LocalPlayer():ConCommand(str);
+			LocalPlayer():ConCommand(str)
 		end
 	end
 
@@ -284,7 +411,7 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				continue
 			end
 
-			if (!info.enableUI) then
+			if (!info.enableUI || !info.enabled) then
 				continue
 			end
 

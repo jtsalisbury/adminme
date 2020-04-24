@@ -2,7 +2,7 @@ am.addCMD("ban", "Bans a player", "Administration", function(caller, target, rea
 	local isPlayer = type(target) == "Player" 
 
 	// Notifications
-	if (duration.seconds == 0) then
+	if (!duration || duration.seconds == 0) then
 		am.notify(nil, am.green, caller:Nick(), am.def, " has banned ", am.red, isPlayer && target:Nick() || target, " indefinitely", am.def, " on ", am.red, server.info.name, am.def, " because of ", am.red, reason)
 	else
 		am.notify(nil, am.green, caller:Nick(), am.def, " has banned ", am.red, isPlayer && target:Nick() || target, am.def, " for ", am.red, duration.pretty , am.def, " on ", am.red, server.info.name, am.def, " because of ", am.red, reason)
@@ -40,7 +40,11 @@ end):addParam({
 	name = "time",
 	type = "duration",
 	optional = true,
-	defaultUI = "indefinitely"
+	defaultUI = "indefinitely",
+	default = {
+		seconds = 0,
+		pretty = "indefinitely"
+	}
 }):setPerm("ban")
 
 am.addCMD("unbanid", "Unbans a player by their steamid. Note: global unbans will deactive ALL bans", "Administration", function(caller, target, server, deleteBan)
@@ -91,5 +95,5 @@ end):addParam({
 	name = "delete ban", 
 	type = "bool",
 	optional = true, 
-	defaultUI = "true"
+	defaultUI = "false"
 }):setPerm("unban")

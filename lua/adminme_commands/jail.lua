@@ -13,7 +13,7 @@ am.addCMD("jail", 'Jails a player', 'Administration', function(caller, target, r
 	end)
 
 	// Undo the jail time
-	timer.Simple(thetime, function()
+	timer.Simple(tLeft, function()
 		if (IsValid(target) && target.jailed) then
 			target:Freeze(false)
 			target.jailed = false

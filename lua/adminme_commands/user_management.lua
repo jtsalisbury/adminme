@@ -1,4 +1,9 @@
 am.addCMD("adduser", "Adds a player to a rank", "User Mgmt", function(caller, target, rank, server, duration)
+	if (rank.info.name == am.config.default_rank) then
+		am.notify(caller, "Invalid rank")
+		return
+	end
+	
 	// Add to rank will handle verification
 	am.addToRank(caller, target, rank.id, server.id, duration && duration.seconds || nil)
 
@@ -27,6 +32,11 @@ end):addParam({
 }):setPerm("usermgmt")
 
 am.addCMD("remuser", "Removes a user from a specific rank and server", "User Mgmt", function(caller, target, rank, server)
+	if (rank && rank.info && rank.info.name == am.config.default_rank) then
+		am.notify(caller, "Invalid rank")
+		return
+	end
+
 	// Remove from rank will handle verification
 	// Will also handle different parameter availability	
 	// Note that: We pass in defaults for rank and server, but we verify they're correct here, such that the UI example can be updated nicely

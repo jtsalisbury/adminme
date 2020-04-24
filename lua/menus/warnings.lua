@@ -118,7 +118,7 @@ hook.Add("AddAdditionalMenuSections", "am.addWarningsMenu", function(stor)
 
 		// Main scrollpanel for names
 		local warnScroll = vgui.Create("DScrollPanel", main)
-		warnScroll:SetSize(main:GetWide() - 20, main:GetTall() - 10)
+		warnScroll:SetSize(main:GetWide() - 20, main:GetTall() - 20)
 		warnScroll:SetPos(10, 10)
 
 		// Layout for all the warnings

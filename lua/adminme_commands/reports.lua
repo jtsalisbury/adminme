@@ -17,12 +17,12 @@ am.addCMD("report", 'Report a player', 'Administration', function(caller, target
 		:insert("creator_nick", caller:Nick())
 		:insert("target_steamid", target:SteamID())
 		:insert("target_nick", target:Nick())
-		:insert("server", am.config.server_name)
+		:insert("serverid", am.config.server_id)
 		:insert("state", 0)
 		:insert("reason", reason)
 		:callback(function(res)
 			// Notify all the admins
-			am.notify(am.getAdmins(), "A new report from ", am.green, caller:Nick(), am.def, " against ", am.red, target:Nick(), am.def, " has been filed for ", am.green, reason)
+			am.notify(am.getAdmins(), "A new report against ", am.red, target:Nick(), am.def, " has been filed by ", am.green, caller:Nick())
 		end)
 	:execute()
 
@@ -34,16 +34,35 @@ end):addParam({
 	type = "string"
 }):setPerm("report")
 
-am.addCMD("creport", "Closes a report. This shouldn't be called outside of the menu!", "Administration", function(caller, id)
-	local q = am.db:update("reports"):update("state", 1):where("id", id)
+am.addCMD("creport", "Closes a report. This shouldn't be called outside of the menu!", "Administration", function(caller, id, notes)
+	local q = am.db:update("reports"):update("state", 1):update("admin_notes", notes):where("id", id)
 		:callback(function(res)
-			am.notify(am.getAdmins(), "The report with id #" .. id .. " has been closed by " .. caller:Nick())
+			am.notify(am.getAdmins(), "Report #" .. id .. " has been closed by " .. caller:Nick())
 		end)
 	:execute()
 
 end):addParam({
 	name = "id", 
 	type = "number"
+}):addParam({
+	name = "notes",
+	type = "string",
+	optional = true
+}):setPerm("creport"):disableUI()
+
+am.addCMD("updatereport", "Updates a report with new notes. This shouldn't be called outside of the menu!", "Administration", function(caller, id, notes)
+	local q = am.db:update("reports"):update("admin_notes", notes):where("id", id)
+		:callback(function(res)
+			am.notify(am.getAdmins(), "Report #" .. id .. " has been updated by " .. caller:Nick())
+		end)
+	:execute()
+
+end):addParam({
+	name = "id", 
+	type = "number"
+}):addParam({
+	name = "notes",
+	type = "string",
 }):setPerm("creport"):disableUI()
 
 net.Receive("am.requestReportList", function(l, ply)
@@ -67,7 +86,7 @@ hook.Add("PlayerInitialSpawn", "am.activeReports", function(ply)
 		if (ply:hasPerm("creport")) then
 			local q = am.db:select("reports")
 				:where("state", 0)
-				:where("server", am.config.server_name)
+				:where("serverid", am.config.server_id)
 				:callback(function(res)
 					local count = #res
 

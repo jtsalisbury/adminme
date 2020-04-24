@@ -11,7 +11,7 @@ function cmd_mt:ctor(aliases, helptext, category, callback)
 	self.permCheck = function() return true end
 	self.callback = callback
 	self.canUse = true
-	self.category = isstring(category) and category or "No Category"
+	self.category = isstring(category) && category || "No Category"
 
 	// Register a console command for each alias
 	for k,v in pairs(aliases) do
@@ -24,7 +24,13 @@ function cmd_mt:ctor(aliases, helptext, category, callback)
 	// Setup each alias to reference the new command
 	for k, alias in ipairs(self.aliases) do
 		am.cmds[ alias ] = self
-		ndoc.table.am.commands [ alias ] = {help = helptext, params = {}, cat = category, enableUI = true}
+		ndoc.table.am.commands [ alias ] = {
+			help = helptext, 
+			params = {}, 
+			cat = category, 
+			enableUI = true,
+			enabled = true
+		}
 	end
 
 	return self
@@ -43,8 +49,8 @@ function cmd_mt:addParam(data)
 	local default = data.default
 	local defaultUI = data.defaultUI
 	local name = data.name
-	// In this case, we pass a table with values
 
+	// In this case, we pass a table with values
 	if useArgList && !am.argOptions[type] then
 		error("no valid argument options for argument type " .. tostring(type))
 	end
@@ -102,9 +108,9 @@ function cmd_mt:setGamemode(gm)
 		for k,v in pairs(self.aliases) do
 			am.cmds[ v ].canUse = false
 			ndoc.table.am.commands[ v ].gamemode = gm 
+			ndoc.table.am.commands[ v ].enabled = false
 			concommand.Remove("am_" .. v)
 		end
-
 	end
 
 	return self
@@ -128,7 +134,7 @@ am.argTypes["player"] = function(argument, pl)
 			end
 		end
 
-		return argument
+		return nil
 	end
 
 	argument = argument:lower()
@@ -330,8 +336,6 @@ function am.parseLine(line)
 			index = nextSpace
 		end
 	end
-
-	PrintTable(parts)
 
 	// Return the words and phrases
 	return parts

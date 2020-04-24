@@ -75,7 +75,8 @@ function am.getVerticalSize(str, font, availableWidth)
 	local neededWidth = tW // total string width
 	local rowCount = math.ceil(neededWidth / availableWidth)
 
-	return tH * rowCount, tH
+	// Add an extra row cuz sometimes this solution doesn't work? very strange
+	return tH * rowCount + tH, tH
 end
 
 local distance_between = 20

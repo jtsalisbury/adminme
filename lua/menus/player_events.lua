@@ -32,7 +32,7 @@ hook.Add("AddAdditionalMenuSections", "am.addPlayerEventsSection", function(stor
 		local tW, tH = surface.GetTextSize("X")
 		for time,reasonStr in ndoc.pairs(requests) do
 			// Custom wrap it, I want extra padding on the left side
-			local str = Wrap(os.date("%I:%M %p", time) .. " | " ..reasonStr, list:GetWide() - 30)
+			local str = am.wrap(os.date("%I:%M %p", time) .. " | " ..reasonStr, list:GetWide() - 30)
 
 			// Event form control
 			local ev = list:Add("DLabel")

@@ -5,7 +5,13 @@ am.addCMD("slaynr", "Marks a player for slays on n rounds", 'TTT', function(call
 	am.notify(nil, am.green, caller:Nick(), am.def, " has marked ", am.red, target:Nick(), am.def, " for ", am.red, slays, am.def, " slays")
 
 	target:SetPData("nrslays", tonumber(slays))
-end):setGamemode("terrortown"):addParam("target", "player"):addParam("slays", "number"):setPerm("ttt_slay")
+end):setGamemode("terrortown"):addParam({
+	name = "target", 
+	type = "player"
+}):addParam({
+	name = "slays",
+	type = "number"
+}):setPerm("ttt_slay")
 
 am.addCMD("respawn", "Respawn a player", 'TTT', function(caller, target)
 	if ((target:Alive() and target:IsSpec()) or not target:Alive()) then
@@ -38,8 +44,10 @@ am.addCMD("respawn", "Respawn a player", 'TTT', function(caller, target)
             end
 		end)
 	end
-end):setGamemode("terrortown"):addParam("target", "player"):setPerm("ttt_respawn")
-
+end):setGamemode("terrortown"):addParam({
+	name = "target", 
+	type = "player"
+}):setPerm("ttt_respawn")
 
 local function GetLoadoutWeapons(r)
 	local tbl = {
@@ -122,7 +130,13 @@ am.addCMD("forcerole", "Forces a user's role", 'TTT', function(caller, target, r
     end
 
     am.notify(target, "Your role has been set to " .. role )
-end):setGamemode("terrortown"):addParam("target", "player"):addParam("role", "string"):setPerm("ttt_forceRole")
+end):setGamemode("terrortown"):addParam({
+	name = "target", 
+	type = "player"
+}):addParam({
+	name = "role", 
+	type = "string"
+}):setPerm("ttt_forceRole")
 
 am.addCMD("forcespec", "Forces a player to and from spectator mode", 'TTT', function(caller, target, unspec)
 	if (!unspec) then
@@ -140,7 +154,13 @@ am.addCMD("forcespec", "Forces a player to and from spectator mode", 'TTT', func
 	else
 		am.notify(nil, target:Nick(), " has been forced to rejoin the living world next round!")
 	end
-end):setGamemode("terrortown"):addParam("target", "player"):addParam("spec", "bool"):setPerm("ttt_forceSpec")
+end):setGamemode("terrortown"):addParam({
+	name = "target", 
+	type = "player"
+}):addParam({
+	name = "spec", 
+	type = "bool"
+}):setPerm("ttt_forceSpec")
 
 hook.Add("TTTBeginRound", "SlayNR", function()
 	for k,v in pairs(player.GetAll()) do
@@ -185,4 +205,7 @@ am.addCMD("rbody", "Removes a player's dead body", "TTT", function(caller, targe
 		am.notify(caller, "No body was found!")
 	end
 
-end):setGamemode("terrortown"):addParam("target", "player"):setPerm("ttt_rbody")
+end):setGamemode("terrortown"):addParam({
+	name = "target", 
+	type = "player"
+}):setPerm("ttt_rbody")

@@ -10,7 +10,10 @@ am.addCMD("sit", 'Sends a target to the sit room', 'Teleportation', function(cal
 	local pos = am.sitpos [ math.random(1, #am.sitpos) ]
 
 	target:SetPos(pos)
-end):addParam('target', 'player'):setPerm("sit")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):setPerm("sit")
 
 am.addCMD("addsit", 'Adds a sit position', 'Misc', function(caller)
 	am.notify(nil, am.green, caller:Nick(), am.def, ' has added a sit position.')

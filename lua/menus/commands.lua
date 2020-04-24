@@ -13,6 +13,22 @@ local function sortCmdsIntoCats()
 	return sorted
 end
 
+// Helper function to generate  list of params
+local function generateParamString(params)
+	local pStr = ""
+	for k,param in ndoc.pairs(params) do
+		pStr = pStr .. " <" .. param.name
+
+		if (param.optional && param.uiDefault) then
+			// TODO: consolidate this to just "default" or something, which may be hard even though we have objects returned and stuff
+			pStr = pStr .. " = " .. param.uiDefault
+		end
+
+		pStr = pStr .. ">"
+	end
+
+	return pStr
+end
 
 hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 	local sorted = sortCmdsIntoCats()
@@ -26,22 +42,11 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		headerPanel:SetHText(cmd)
 		headerPanel:SetPos(10, 10)
 
-		local pStr = ""
-		for k,v in ndoc.pairs(info.params) do
-			pStr = pStr .. " <" .. v[1]
-
-			if (v[3]) then
-				pStr = pStr .. " = " .. v[3]
-			end
-
-			pStr = pStr .. ">"
-		end
-
 		local example = vgui.Create("am.DTextEntry", headerPanel)
 		example:SetSize(headerPanel:GetWide() - 20, 40)
 		example:SetPos(10, 50)
 		example:SetDisabled(true)
-		example:SetPlaceholder("am_" .. cmd .. " " .. pStr)
+		example:SetPlaceholder("am_" .. cmd .. " " .. generateParamString(info.params))
 
 		local help = vgui.Create("DLabel", headerPanel)
 		help:SetSize(headerPanel:GetWide() - 20, 40)
@@ -255,42 +260,53 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 		end
 	end
 
+	// Responsible for populating the list of commands
 	local function repopulateList(scroller, main, search_text)
 		activeCmd = nil
 		scroller:Clear()
 
+		// Spacer for the searchbar
 		local spacer = vgui.Create("DPanel", scroller)
 		spacer:SetSize(scroller:GetWide(), 50)
 		function spacer:Paint(w, h)
 			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255, 0))
 		end
 
+		// Add each command
 		for cmd, info in ndoc.pairs(ndoc.table.am.commands) do
+			// Match the command	
 			if (string.find(cmd, search_text) == nil && search_text != "") then
 				continue
 			end
 
-			if (not LocalPlayer():hasPerm(info.restrictedTo)) then
+			// Ensure we have permission to view it
+			if (!LocalPlayer():hasPerm(info.restrictedTo)) then
+				continue
+			end
+
+			if (!info.enableUI) then
 				continue
 			end
 
 			surface.SetFont('adminme_btn_small')
 			local tW, tH = surface.GetTextSize(cmd)
 
+			// Create the button
 			local cmd_btn = scroller:Add("DButton")
-			cmd_btn:SetSize(scroller:GetWide(), tH + 10)
+			cmd_btn:SetSize(scroller:GetWide(), tH + 20)
 			cmd_btn:SetText("")
 			cmd_btn.cmd = cmd
-
 			function cmd_btn:Paint(w, h)
 				local col = cols.item_btn_bg
 				local textCol = cols.item_btn_text
 
+				// Hovered
 				if (self:IsHovered()) then
 					col = cols.item_btn_bg_hover
 					textCol = cols.item_btn_text_hover
 				end
 
+				// Active
 				local adjustedWidth = w - 20
 				if (activeCmd == cmd) then
 					col = cols.item_btn_bg_active
@@ -302,6 +318,7 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 				draw.SimpleText(cmd, "adminme_btn_small", w / 2, h / 2, textCol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 			function cmd_btn:DoClick()
+				// Populate the main section with the command info
 				populateMain(cmd, info, main)
 
 				activeCmd = cmd
@@ -310,6 +327,7 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 	end
 
 	local function populateList(scroller, main, frame)
+		// Create and position the search background
 		local posX = frame:GetWide() - main:GetWide() - scroller:GetWide()
 		local search_bg = vgui.Create("DPanel", frame)
 		search_bg:SetSize(scroller:GetWide(), 50)
@@ -318,6 +336,7 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 			draw.RoundedBox(0, 0, 0, w, h, cols.item_scroll_bg)
 		end
 
+		// Create the search entry
 		local search = vgui.Create("am.DTextEntry", search_bg)
 		search:SetSize(search_bg:GetWide() - 20, search_bg:GetTall() - 20)
 		search:SetPos(10, 10)
@@ -326,16 +345,12 @@ hook.Add("AddAdditionalMenuSections", "am.addCommandSection", function(stor)
 
 		frame.extras = {search_bg, search}
 
+		// Repopulate the list of commands once we change our text
 		function search:OnChange()
 			repopulateList(scroller, main, self:GetText())
 		end
 
-		local search_bg = vgui.Create("DPanel", scroller)
-		search_bg:SetSize(scroller:GetWide(), 35)
-		function search_bg:Paint(w, h)
-			draw.RoundedBox(0, 0, 0, w, h, Color(255, 255, 255))
-		end
-
+		// Default
 		repopulateList(scroller, main, "")
 	end
 

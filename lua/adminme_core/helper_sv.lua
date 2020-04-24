@@ -52,7 +52,7 @@ function am.addToRank(caller, target, rankid, serverid, expireTime)
 	end
 
 	// Get an updated expiration time
-	expireTime = expireTime && expireTime + os.time() || 0
+	expireTime = expireTime > 0 && expireTime + os.time() || 0
 	
 	// Update the database
 	if (rankAlreadySet) then
@@ -66,9 +66,10 @@ function am.addToRank(caller, target, rankid, serverid, expireTime)
 	ndoc.table.am.users[target:SteamID()][rankid][serverid].expires = expireTime
 end
 
-function am.removeFromRank(caller, target, rankid, serverid)
+// Remove a user from a rank. Note: checkOverride should not be called outside of this system. It bypasses server & rank checks and doesn't updat ethe network table
+function am.removeFromRank(caller, target, rankid, serverid, checkOverride)
 	// Verify the servers exist
-	if (serverid && !ndoc.table.am.servers[ serverid ] && serverid != 0) then
+	if (serverid && !ndoc.table.am.servers[ serverid ] && serverid != 0 && !checkOverride) then
 		am.notify(caller, "Server specified is incorrect! Please use only those from below!")
 
 		for k,v in ndoc.pairs(ndoc.table.am.servers) do
@@ -79,7 +80,7 @@ function am.removeFromRank(caller, target, rankid, serverid)
 	end
 
 	// Verify the user has the rank
-	if (rankdid && !ndoc.table.am.users[target:SteamID()][rankid]) then
+	if (rankdid && !ndoc.table.am.users[target:SteamID()][rankid] && !checkOverride) then
 		am.notify(caller, "Invalid rank specified! Please use only those below!")
 
 		for rankid,v in ndoc.pairs(ndoc.table.am.users[target:SteamID()]) do
@@ -94,6 +95,12 @@ function am.removeFromRank(caller, target, rankid, serverid)
 	// Delete row entry
 	if (rankid && serverid != nil) then // Delete rank on server
 		am.db:delete("users"):where("steamid", target:SteamID()):where("rankid", rankid):where("serverid", serverid):execute()
+
+		// Check override is passed via am.pullUserInfo, where if a rank or server is invalid, we discard it
+		if (checkOverride) then
+			return
+		end	
+
 		ndoc.table.am.users[target:SteamID()][rankid][serverid] = nil
 
 		// If there are no scopes left, remove the rank
@@ -228,25 +235,23 @@ function am.pullUserInfo(ply)
 		for k, row in pairs(res) do	
 			// Make sure the server exists
 			if (!ndoc.table.am.servers[row["serverid"]]) then
-				am.removeFromRank(ply, ply, row["rankid"], row["serverid"])
+				am.removeFromRank(nil, ply, row["rankid"], row["serverid"], true)
 				continue
 			end
 
 			// Make sure the rank still exists
 			if (!ndoc.table.am.permissions[row["rankid"]]) then
-				am.removeFromRank(ply, ply, row["rankid"], row["serverid"]) 
+				am.removeFromRank(ply, ply, row["rankid"], row["serverid"], true) 
 				continue
 			end
 
 			// Structure: user{} -> rank id -> scope id -> expiresOn 
 			// We'll add the user to every rank they have, but we when we check, we'll only count the ones for this server
-			ranks[ row["rankid"] ] = ranks[ row["rankid"] ] || { }
-			ranks[ row["rankid"] ][row["serverid"]] = {
+			ndoc.table.am.users[ply:SteamID()][ row["rankid"] ] = ndoc.table.am.users[ply:SteamID()][ row["rankid"] ] || { }
+			ndoc.table.am.users[ply:SteamID()][ row["rankid"] ][row["serverid"]] = {
 				expires = row["expires"]
 			}
 		end
-
-		ndoc.table.am.users[ply:SteamID()] = ranks;
 		
 		// We add all ranks regardless, but now let's see if one is expired
 		am.checkExpiredRank(ply)

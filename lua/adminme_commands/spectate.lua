@@ -10,7 +10,10 @@ am.addCMD("spectate", 'Spectates a player', 'Administration', function(caller, t
 
 	// Hide them
 	caller:DrawViewModel(false)
-end):addParam('target', 'player'):setPerm("spectate")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):setPerm("spectate")
 
 am.addCMD("unspectate", 'Spectates a player', 'Administration', function(caller)
 	if (!caller.spectating) then am.notify(caller, 'You arent spectating!') return end

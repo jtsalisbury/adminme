@@ -26,7 +26,13 @@ am.addCMD("report", 'Report a player', 'Administration', function(caller, target
 		end)
 	:execute()
 
-end):addParam("target", "player"):addParam("reason", "string"):setPerm("report")
+end):addParam({
+	name = "target", 
+	type = "player"
+}):addParam({
+	name = "reason", 
+	type = "string"
+}):setPerm("report")
 
 am.addCMD("creport", "Closes a report. This shouldn't be called outside of the menu!", "Administration", function(caller, id)
 	local q = am.db:update("reports"):update("state", 1):where("id", id)
@@ -35,7 +41,10 @@ am.addCMD("creport", "Closes a report. This shouldn't be called outside of the m
 		end)
 	:execute()
 
-end):addParam("id", "number"):setPerm("creport")
+end):addParam({
+	name = "id", 
+	type = "number"
+}):setPerm("creport"):disableUI()
 
 net.Receive("am.requestReportList", function(l, ply)
 	if (!ply:hasPerm("creport")) then return end

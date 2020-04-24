@@ -19,7 +19,16 @@ am.addCMD("jail", 'Jails a player', 'Administration', function(caller, target, r
 			target.jailed = false
 		end
 	end)
-end):addParam('target', 'player'):addParam('reason', 'string'):addParam("time", "duration"):setPerm("jail")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):addParam({
+	name = 'reason', 
+	type = 'string'
+}):addParam({
+	name = 'time', 
+	type = 'duration'
+}):setPerm("jail")
 
 am.addCMD("unjail", 'Unjails a player', 'Administration', function(caller, target)
 	if (!target.jailed) then return end
@@ -32,4 +41,7 @@ am.addCMD("unjail", 'Unjails a player', 'Administration', function(caller, targe
 	// Unjail them
 	target.jailed = false
 	target:Freeze(false)
-end):addParam('target', 'player'):setPerm("jail")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):setPerm("jail")

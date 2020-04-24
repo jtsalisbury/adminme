@@ -24,13 +24,31 @@ function cmd_mt:ctor(aliases, helptext, category, callback)
 	// Setup each alias to reference the new command
 	for k, alias in ipairs(self.aliases) do
 		am.cmds[ alias ] = self
-		ndoc.table.am.commands [ alias ] = {help = helptext, params = {}, cat = category}
+		ndoc.table.am.commands [ alias ] = {help = helptext, params = {}, cat = category, enableUI = true}
 	end
 
 	return self
 end
 
-function cmd_mt:addParam(name, type, useArgList, optional, default) 
+function cmd_mt:disableUI()
+	for k, alias in ipairs(self.aliases) do
+		ndoc.table.am.commands [ alias ].enableUI = false
+	end
+end
+
+function cmd_mt:addParam(data)
+	local type = data.type
+	local useArgList = data.useArgList
+	local optional = data.optional
+	local default = data.default
+	local defaultUI = data.defaultUI
+	local name = data.name
+	// In this case, we pass a table with values
+
+	if useArgList && !am.argOptions[type] then
+		error("no valid argument options for argument type " .. tostring(type))
+	end
+
 	if !am.argTypes[type] then
 		error("invalid argument type " .. tostring(type))
 	end
@@ -41,13 +59,18 @@ function cmd_mt:addParam(name, type, useArgList, optional, default)
 		type = type,
 		optional = optional,
 		useArgList = useArgList,
-		default = default
+		default = default,
 	})
-
 
 	// Update each alias for the command
 	for k,v in pairs(self.aliases) do
-		ndoc.table.am.commands[ v ].params[ #self.params ] = {name, type, default, arg_list}
+		ndoc.table.am.commands[ v ].params[ #self.params ] = {
+			name = name, 
+			type = type, 
+			defaultUI = defaultUI,
+			optional = optional,
+			useArgList = useArgList
+		}
 	end
 
 	return self
@@ -227,13 +250,17 @@ am.argTypes["duration"] = function(arg)
 
 	// Match the string as 100 yr or any variation
 	local time, modifier = string.match(arg, "([%d]*)%s*([%a]*)")
+	time = time && tonumber(time) || nil
 	if (!time || !modifier) then
+		return
+	end
+
+	if (time < 0) then
 		return
 	end
 
 	// Make sure we have a valid conversion factor
 	if (!am.argOptions["duration"][ modifier ]) then
-		print('error 2' .. modifier)
 		return
 	end
 

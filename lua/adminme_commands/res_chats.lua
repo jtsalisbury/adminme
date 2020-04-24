@@ -6,4 +6,7 @@ am.addCMD("a", 'Admin chat', 'Chat', function(caller, text)
 
 		am.notify(v, am.red, c, team.GetColor(caller:Team()), caller:Nick(),': ', am.def, text)
 	end
-end):addParam('text', 'string')
+end):addParam({
+	name = 'text', 
+	type = 'string'
+})

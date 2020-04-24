@@ -50,7 +50,10 @@ am.addCMD("bring", 'Brings a player', 'Teleportation', function(caller, target, 
 		target:SetPos(pos)
 	end
 
-end):addParam('target', 'player'):setPerm("bring")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):setPerm("bring")
 
 am.addCMD("goto", 'Sends you to a player', 'Teleportation', function(caller, target)
 	am.notify(nil, am.green, caller:Nick(), am.def, ' has gone to ', am.red, target:Nick())
@@ -63,7 +66,10 @@ am.addCMD("goto", 'Sends you to a player', 'Teleportation', function(caller, tar
 		caller:SetPos(pos)
 	end
 
-end):addParam('target', 'player'):setPerm("goto")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):setPerm("goto")
 
 am.addCMD("return", 'Returns a player to their position before teleportation.', 'Teleportation', function(caller, target)
 	local pos = target.prevPosition
@@ -78,4 +84,7 @@ am.addCMD("return", 'Returns a player to their position before teleportation.', 
 	// Put em back!
 	target:SetPos(pos)
 	target:SetAngles(ang)
-end):addParam('target', 'player'):setPerm("bring")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):setPerm("bring")

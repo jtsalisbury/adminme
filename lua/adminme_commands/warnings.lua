@@ -33,4 +33,10 @@ am.addCMD("warn", 'Warn a player', 'Administration', function(caller, target, re
 		:insert("admin_nick", caller:Nick())
 		:insert("timestamp", os.time())
 	:execute()
-end):addParam('target', 'player'):addParam("reason", "string"):setPerm("warnings")
+end):addParam({
+	name = 'target', 
+	type = 'player'
+}):addParam({
+	name = "reason", 
+	type = "string"
+}):setPerm("warnings")

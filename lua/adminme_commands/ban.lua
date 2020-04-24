@@ -24,21 +24,26 @@ am.addCMD("ban", "Bans a player", "Administration", function(caller, target, rea
 	if (isPlayer) then
 		target:Kick("You have been banned! Time: " .. duration.pretty .. " Reason: "..reason);
 	end	
-end):addParam("target", "player"):addParam("reason", "string"):addParam("server", "server", true, true, {
-	id = 0,
-	info = {
-		name = "global"
-	}
-}):addParam("time", "duration", false, true, {
-	seconds = 0,
-	pretty = ""
+end):addParam({
+	name = "target",
+	type = "player"
+}):addParam({
+	name = "reason",
+	type = "string"
+}):addParam({
+	name = "server",
+	type = "server",
+	useArgList = true,
+	optional = true,
+	defaultUI = "global"
+}):addParam({
+	name = "time",
+	type = "duration",
+	optional = true,
+	defaultUI = "indefinitely"
 }):setPerm("ban")
 
 am.addCMD("unbanid", "Unbans a player by their steamid. Note: global unbans will deactive ALL bans", "Administration", function(caller, target, server, deleteBan)
-
-	print("Delete ban value: ")
-	print(deleteBan)
-
 	// Optionally delete and unban if it exists
 	am.db:select("bans"):where("banned_steamid", target):where("ban_active", 1):callback(function(res)
 		if (#res == 0) then
@@ -73,11 +78,18 @@ am.addCMD("unbanid", "Unbans a player by their steamid. Note: global unbans will
 			query:execute()
 		end
 	end):execute()
-	
-
-end):addParam("targetid", "string"):addParam("server", "server", true, true, {
-	id = 0,
-	info = {
-		name = "global"
-	}
-}):addParam("delete ban", "bool", false, true, true):setPerm("unban")
+end):addParam({
+	name = "targetid",
+	type = "string"
+}):addParam({
+	name = "server", 
+	type = "server", 
+	useArgList = true, 
+	optional = true,
+	defaultUI = "global"
+}):addParam({
+	name = "delete ban", 
+	type = "bool",
+	optional = true, 
+	defaultUI = "true"
+}):setPerm("unban")

@@ -26,14 +26,15 @@ if (SERVER) then
 	hook.Add("ndocLoaded", "waitForNdoc", function() 
 		print("Netdoc loaded!")
 
-		ndoc.table.am = ndoc.table.am or {}
-		ndoc.table.am.users = ndoc.table.am.users or {}
-		ndoc.table.am.permissions = ndoc.table.am.permissions or {}
-		ndoc.table.am.servers = ndoc.table.am.servers or {}
-		ndoc.table.am.warnings = ndoc.table.am.warnings or {}
-		ndoc.table.am.commands = ndoc.table.am.commands or {}
-		ndoc.table.am.events   = ndoc.table.am.events or {}
-		ndoc.table.am.play_times = ndoc.table.am.play_times or {}
+		ndoc.table.am = ndoc.table.am || {
+			users = {},
+			permissions = {},
+			servers = {},
+			warnings = {},
+			commands = {},
+			events = {},
+			play_times = {}
+		}
 
 		ezdb = include("ezdb/load_sv.lua")
 

@@ -33,7 +33,6 @@ end):addParam({
 }):addParam({
 	name = "server",
 	type = "server",
-	useArgList = true,
 	optional = true,
 	defaultUI = "global"
 }):addParam({
@@ -88,7 +87,6 @@ end):addParam({
 }):addParam({
 	name = "server", 
 	type = "server", 
-	useArgList = true, 
 	optional = true,
 	defaultUI = "global"
 }):addParam({

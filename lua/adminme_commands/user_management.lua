@@ -18,12 +18,10 @@ end):addParam({
 	type = "player"
 }):addParam({
 	name = "rank",
-	type = "rank",
-	useArgList = true
+	type = "rank"
 }):addParam({
 	name = "server", 
-	type = "server", 
-	useArgList = true
+	type = "server" 
 }):addParam({
 	name = "time", 
 	type = "duration", 
@@ -56,13 +54,11 @@ end):addParam({
 }):addParam({
 	name = "rank", 
 	type = "rank", 
-	useArgList = true, 
 	optional = true,
 	defaultUI = "all"
 }):addParam({
 	name = "server", 
 	type = "server", 
-	useArgList = true, 
 	optional = true,
 	defaultUI = "global"
 }):setPerm("usermgmt")

@@ -1,5 +1,7 @@
 util.AddNetworkString("am.playSong")
 util.AddNetworkString("am.endSong")
+/*
+
 
 am.music = util.JSONToTable(file.Read("am_music.txt", "DATA") or "[]")
 ndoc.table.am.music = am.music
@@ -93,3 +95,4 @@ am.addCMD("endsong", "Stop playing a song", "Music", function(caller, id)
 
 	am.notify(nil, "Stopped playing!")
 end):setPerm("musicmgmt")
+*/
